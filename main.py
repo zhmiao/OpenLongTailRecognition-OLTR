@@ -3,7 +3,7 @@ import imp
 import argparse
 import pprint
 from data import dataloader
-from run_networks_v7 import model
+from run_networks import model
 import warnings
 
 # ================
@@ -11,18 +11,10 @@ import warnings
 
 data_root = {'imagenet_lt': '/home/public/dataset/imagenet_LT/',
              'sun397_lt': '/home/public/dataset/sun397_LT/',
-             'places365_lt': '/home/public/dataset/Places365_LT/',
-             'alpha_2_min_5': '/home/public/dataset/imagenet_LT/tailness_examination/alpha_2_min_5/',
-             'alpha_6_min_5': '/home/public/dataset/imagenet_LT/',
-             'alpha_15_min_5': '/home/public/dataset/imagenet_LT/tailness_examination/alpha_15_min_5/',
-             'alpha_6_min_1': '/home/public/dataset/imagenet_LT/tailness_examination/alpha_6_min_1',
-             'alpha_6_min_10': '/home/public/dataset/imagenet_LT/tailness_examination/alpha_6_min_10',
-             'alpha_6_min_20': '/home/public/dataset/imagenet_LT/tailness_examination/alpha_6_min_20'}
-# data_root = {'imagenet_lt': '/home/zwliu/FewShotLearning/data/imagenet_LT/',
-#             'sun397_lt': '/home/zwliu/FewShotLearning/data/sun397_LT/'}
+             'places365_lt': '/home/public/dataset/Places365_LT/'}
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', default='./config/imagenet_lt/plain_resnet10.py', type=str)
+parser.add_argument('--config', default='./config/Imagenet_LT/plain_resnet10.py', type=str)
 parser.add_argument('--test', default=False)
 parser.add_argument('--test_epoch', default=None, type=int)
 parser.add_argument('--test_open', default=False)

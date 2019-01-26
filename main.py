@@ -4,6 +4,7 @@ import argparse
 import pprint
 from data import dataloader
 from run_networks import model
+from run_openmax import openmax_results
 import warnings
 
 # ================
@@ -14,7 +15,7 @@ data_root = {'imagenet_lt': '/home/public/dataset/imagenet_LT/',
              'places365_lt': '/home/public/dataset/Places365_LT/'}
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', default='./config/Imagenet_LT/plain_resnet10.py', type=str)
+parser.add_argument('--config', default='./config/Imagenet_LT/Stage_1.py', type=str)
 parser.add_argument('--test', default=False)
 parser.add_argument('--test_epoch', default=None, type=int)
 parser.add_argument('--test_open', default=False)
@@ -38,7 +39,6 @@ dataset = training_opt['dataset']
 
 if not os.path.isdir(training_opt['log_dir']):
     os.makedirs(training_opt['log_dir'])
-
 
 print('Loading dataset from: %s' % data_root[dataset])
 pprint.pprint(config)

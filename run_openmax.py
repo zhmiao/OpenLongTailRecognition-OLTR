@@ -289,14 +289,6 @@ def grid_search(workers):
     best_tail = 0
     best_alpha = 0
 
-    # alpharank_list = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
-
-    # tail_list = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-
-    # alpharank_list = [1, 2, 3]
-
-    # tail_list = [1, 2, 3, 4]
-
     alpharank_list = [0, 1, 2]
 
     tail_list = [0, 1, 2]

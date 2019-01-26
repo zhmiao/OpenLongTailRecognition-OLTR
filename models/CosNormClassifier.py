@@ -13,7 +13,7 @@ class CosNorm_Classifier(nn.Module):
         self.scale = scale
         self.margin = margin
         self.weight = Parameter(torch.Tensor(out_dims, in_dims).cuda())
-        self.reset_parameters()
+        self.reset_parameters() 
 
     def reset_parameters(self):
         stdv = 1. / math.sqrt(self.weight.size(1))

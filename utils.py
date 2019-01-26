@@ -62,21 +62,31 @@ def batch_show(inp, title=None):
     if title is not None:
         plt.title(title)
         
-def init_weights(model, weights_path, caffe=False):
+def init_weights(model, weights_path, caffe=False, classifier=False):
+    
     """Initialize weights"""
 
-    print('Pretrained weights: %s' % (weights_path))
+    print('Pretrained %s weights: %s' % ('classifier' if classifier else '',
+                                         weights_path))
     
     weights = torch.load(weights_path)
     
-    if caffe:
-        weights = {k: weights[k] if k in weights else model.state_dict()[k] 
-                   for k in model.state_dict()}
+    if not classifier:
+
+        if caffe:
+            weights = {k: weights[k] if k in weights else model.state_dict()[k] 
+                       for k in model.state_dict()}
+        else:
+            weights = weights['state_dict_best']['feat_model']
+            weights = {k: weights['module.' + k] if 'module.' + k in weights else model.state_dict()[k] 
+                       for k in model.state_dict()}
+
     else:
-        weights = weights['state_dict_best']['feat_model']
-        weights = {k: weights['module.' + k] if 'module.' + k in weights else model.state_dict()[k] 
+        
+        weights = weights['state_dict_best']['classifier']
+        weights = {k: weights['module.fc.' + k] if 'module.fc.' + k in weights else model.state_dict()[k] 
                    for k in model.state_dict()}
-    
+
     model.load_state_dict(weights)
     
     return model

@@ -1,6 +1,5 @@
 import math
 import torch.nn as nn
-import torchvision
 import torch.nn.functional as F
 from layers.SelfAttLayer_ours_update import SelfAttLayer
 

@@ -349,11 +349,6 @@ class model ():
                                                              else tqdm(self.data[phase][0])):
                     inputs, labels = self.inputs.to(self.device), self.labels.to(self.device)
 
-#                    if phase == 'train' and training_step == 5:
-#                        break
-                    
-                    # pdb.set_trace()
-
                     if need_break \
                         and phase == 'train' \
                         and training_step % self.epoch_steps == 0:
@@ -435,9 +430,6 @@ class model ():
 
                 # If under validation or testing, calculate accuracy on the validation set
                 if phase != 'train':
-
-                    # Evaluation loss
-                    # self.phase_loss = self.running_loss / self.class_total.sum().item()
 
                     # Top 1
                     self.acc_mic_top1 = self.running_correct_total_top1 / self.class_total.sum().item()
@@ -522,8 +514,8 @@ class model ():
                         best_model_weights['classifier'] = copy.deepcopy(self.networks['classifier'].state_dict())
 
                         # Save model every 5 epochs
-                        if epoch % 5 == 0:
-                            self.save_model(epoch, centers=self.centers)
+                        # if epoch % 5 == 0:
+                        #     self.save_model(epoch, centers=self.centers)
 
         if mode == 'train':
             print()
@@ -538,8 +530,8 @@ class model ():
         if not epoch:
             
             model_dir = os.path.join(self.training_opt['log_dir'], 
-                                     'final_model_checkpoint.pth.tar' \
-                                     if not self.use_step else 'final_model_checkpoint_step.pth.tar')
+                                     'final_model_checkpoint.pth' \
+                                     if not self.use_step else 'final_model_checkpoint_step.pth')
             
             print('Validation on the best model.')
             print('Loading model from %s' % (model_dir))
@@ -552,8 +544,8 @@ class model ():
         else:
             
             model_dir = os.path.join(self.training_opt['log_dir'], 
-                                     ('epoch_%s_checkpoint.pth.tar' % epoch) \
-                                     if not self.use_step else ('epoch_%s_checkpoint_step.pth.tar' % epoch))
+                                     ('epoch_%s_checkpoint.pth' % epoch) \
+                                     if not self.use_step else ('epoch_%s_checkpoint_step.pth' % epoch))
             
             print('Validation on the model of epoch %d' % epoch)            
             print('Loading model from %s' % (model_dir))
@@ -583,12 +575,12 @@ class model ():
 
         if best_epoch:
             model_dir = os.path.join(self.training_opt['log_dir'], 
-                                     'final_model_checkpoint.pth.tar' \
-                                     if not self.use_step else 'final_model_checkpoint_step.pth.tar')
+                                     'final_model_checkpoint.pth' \
+                                     if not self.use_step else 'final_model_checkpoint_step.pth')
             torch.save(model_states, model_dir)
         else:
             model_dir = os.path.join(self.training_opt['log_dir'], 
-                                     ('epoch_%s_checkpoint.pth.tar' % epoch) \
-                                     if not self.use_step else ('epoch_%s_checkpoint_step.pth.tar' % epoch))
+                                     ('epoch_%s_checkpoint.pth' % epoch) \
+                                     if not self.use_step else ('epoch_%s_checkpoint_step.pth' % epoch))
             torch.save(model_states, model_dir)
             

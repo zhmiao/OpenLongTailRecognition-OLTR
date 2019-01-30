@@ -9,20 +9,20 @@ def create_model(pre_weights=None, use_selfatt=False, use_fc=False, dropout=None
     if pre_weights == 'caffe':
         print('Loading Caffe Pretrained ResNet 152 Weights.')
         resnet152 = init_weights(model=resnet152,
-                                 weights_path='./pretrained_weights/caffe_resnet152.pth',
+                                 weights_path='./logs/caffe_resnet152.pth',
                                  caffe=True)
 
-    elif pre_weights == 'sun':
+    elif pre_weights == 'sun_st1':
         print('Loading SUN Stage 1 ResNet 152 Weights.')
         resnet152 = init_weights(model=resnet152,
-                                 weights_path='./pretrained_weights/sun_pretrained_resnet152.pth')
+                                 weights_path='./logs/SUN_LT/stage1/final_model_checkpoint.pth')
 
-    elif pre_weights == 'places':
+    elif pre_weights == 'places_st1':
         print('Loading PLACES Stage 1 ResNet 152 Weights.')
         resnet152 = init_weights(model=resnet152,
-                                 weights_path='./pretrained_weights/places_pretrained_resnet152.pth')
+                                 weights_path='./logs/Places_LT/stage1/final_model_checkpoint.pth')
 
     else:
-        print('No Pretrained Weights.')
+        print('No Pretrained Weights For Feature Model.')
 
     return resnet152

@@ -16,23 +16,26 @@ class Relation_Classifier(nn.Module):
         # if self.stage1_weights:
         #     self.load_stage1_weights (self.stage1_weights)
 
-        if stage1_weights == 'imagenet':
+        if stage1_weights == 'imagenet_st1':
             print('Loading ImageNet Stage 1 Classifier Weights.')
             self.fc_classifier_stage1 = init_weights(model=self.fc_classifier_stage1,
-                                                     weights_path='./pretrained_weights/imagenet_plain_resnet10_fc.pth',
+                                                     weights_path='./logs/Imagenet_LT/stage1/final_model_checkpoint.pth',
                                                      classifier=True)
         
-        elif stage1_weights == 'sun':
+        elif stage1_weights == 'sun_st1':
             print('Loading SUN Stage 1 Classifier Weights.')
             self.fc_classifier_stage1 = init_weights(model=self.fc_classifier_stage1,
-                                                     weights_path='./pretrained_weights/sun_pretrained_resnet152.pth',
+                                                     weights_path='./logs/SUN_LT/stage1/final_model_checkpoint.pth',
                                                      classifier=True)
 
-        elif stage1_weights == 'places':
+        elif stage1_weights == 'places_st1':
             print('Loading PLACES Stage 1 Classifier Weights.')
             self.fc_classifier_stage1 = init_weights(model=self.fc_classifier_stage1,
-                                                     weights_path='./pretrained_weights/places_pretrained_resnet152.pth',
+                                                     weights_path='./logs/Places_LT/stage1/final_model_checkpoint.pth',
                                                      classifier=True)
+
+        else:
+            print('Random initialized classifier weights.')
         
         self.crossentropy_loss = nn.CrossEntropyLoss()
         self.cosnorm_classifier = CosNorm_Classifier(feat_dim, num_classes)

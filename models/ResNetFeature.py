@@ -106,6 +106,7 @@ class ResNet(nn.Module):
   
         self.use_selfatt = use_selfatt
         if self.use_selfatt:
+            print('Using self attention.')
             self.selfatt = SelfAttLayer(in_channels=512*block.expansion)
 
         for m in self.modules():

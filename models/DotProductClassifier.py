@@ -14,23 +14,26 @@ class DotProduct_Classifier(nn.Module):
 
         # self.fc.load_state_dict(weights)
 
-        if stage1_weights == 'imagenet':
+        if stage1_weights == 'imagenet_st1':
             print('Loading ImageNet Stage 1 Classifier Weights.')
             self.fc = init_weights(model=self.fc,
-                                   weights_path='./pretrained_weights/imagenet_plain_resnet10_fc.pth',
-                                   classifier=True)
-            
-        elif stage1_weights == 'sun':
-            print('Loading SUN Stage 1 Classifier Weights.')
-            self.fc = init_weights(model=self.fc,
-                                   weights_path='./pretrained_weights/sun_pretrained_resnet152.pth',
+                                   weights_path='./logs/Imagenet_LT/stage1/final_model_checkpoint.pth',
                                    classifier=True)
 
-        elif stage1_weights == 'places':
+        elif stage1_weights == 'sun_st1':
+            print('Loading SUN Stage 1 Classifier Weights.')
+            self.fc = init_weights(model=self.fc,
+                                   weights_path='./logs/SUN_LT/stage1/final_model_checkpoint.pth',
+                                   classifier=True)
+
+        elif stage1_weights == 'places_st1':
             print('Loading PLACES Stage 1 Classifier Weights.')
             self.fc = init_weights(model=self.fc,
-                                   weights_path='./pretrained_weights/places_pretrained_resnet152.pth',
+                                   weights_path='./logs/Places_LT/stage1/final_model_checkpoint.pth',
                                    classifier=True)
+
+        else:
+            print('Random initialized classifier weights.')
         
     def forward(self, x, *args):
         x = self.fc(x)

@@ -1,9 +1,9 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.nn.parameter import Parameter
+# from torch.nn.parameter import Parameter
 
-from loss.TripletLoss import TripletLoss
+# from loss.TripletLoss import TripletLoss
 
 import pdb
 
@@ -76,7 +76,7 @@ class SelfAttLayer(nn.Module):
         # labels_type = class_type[labels]
         
         # loss_attention = self.triplet_loss(channel_selector, labels_type)
-        loss_attention = 0.0
+        # loss_attention = 0.0
 
         # channel_att = channel_att.unsqueeze(2).unsqueeze(3).expand(-1, -1, 7, 7)
         

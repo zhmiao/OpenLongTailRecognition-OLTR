@@ -4,15 +4,13 @@ import argparse
 import pprint
 from data import dataloader
 from run_networks import model
-from run_openmax import openmax_results
 import warnings
 
 # ================
 # LOAD CONFIGURATIONS
 
-data_root = {'imagenet_lt': '/home/public/dataset/imagenet_LT/',
-             'sun397_lt': '/home/public/dataset/sun397_LT/',
-             'places365_lt': '/home/public/dataset/Places365_LT/'}
+data_root = {'ImageNet_LT': '/home/public/dataset/imagenet_LT/',
+             'Places_LT': '/home/public/dataset/Places365_LT/'}
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='./config/Imagenet_LT/Stage_1.py', type=str)

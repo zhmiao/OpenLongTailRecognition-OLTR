@@ -1,7 +1,7 @@
 from models.ResNetFeature import *
 from utils import *
         
-def create_model(pre_weights=None, use_selfatt=False, use_fc=False, dropout=None):
+def create_model(use_selfatt=False, use_fc=False, dropout=None, stage1_weights=False, dataset=None, *args):
     
     print('Loading Scratch ResNet 10 Feature Model.')
     resnet10 = ResNet(Bottleneck, [1, 1, 1, 1], use_selfatt=use_selfatt, use_fc=use_fc, dropout=None)

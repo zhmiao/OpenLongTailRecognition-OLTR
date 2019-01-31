@@ -73,11 +73,13 @@ class model ():
             def_file = val['def_file']
             model_args = val['params'].values()
 
+            # pdb.set_trace()
+
             self.networks[key] = imp.load_source('', def_file).create_model(*model_args)
             self.networks[key] = nn.DataParallel(self.networks[key]).to(self.device)
             
             if 'fix' in val and val['fix']:
-                print('Freezing feature weights except for self attention weights.')
+                print('Freezing feature weights except for self attention weights (if exist).')
                 for param_name, param in self.networks[key].named_parameters():
                     # Freeze all parameters except self attention parameters
                     if 'selfatt' not in param_name and 'fc' not in param_name:
@@ -137,7 +139,7 @@ class model ():
             for inputs, labels, _ in tqdm(self.data['train_plain'][0]):
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
                 # Calculate Features of each training data
-                features, _, _ = self.networks['feat_model'](inputs, labels, self.class_count)
+                features, _ = self.networks['feat_model'](inputs, labels, self.class_count)
                 # Add all calculated features to center tensor
                 for i in range(len(labels)):
                     label = labels[i]
@@ -168,7 +170,8 @@ class model ():
 
                     inputs, labels = inputs.to(self.device), labels.to(self.device)
 
-                    self.batch_run(inputs, labels, output_logits=True, phase='test')
+                    self.batch_run(inputs, labels, centers=self.relations['centers'], 
+                                   output_logits=True, phase='test')
 
             print('Saving logits to %s' %(self.training_opt['log_dir']+'logits_out_%s.npz' % phase))
             np.savez(self.training_opt['log_dir']+'logits_out_%s.npz' % phase,
@@ -176,15 +179,14 @@ class model ():
                      labels=self.labels_out,)
 
             
-    def batch_run (self, inputs, labels, loss=True, top5=False, centers=True, attention=True, phase='train', output_logits=False):
+    def batch_run (self, inputs, labels, loss=True, top5=False, centers=True, phase='train', output_logits=False):
 
         '''
         This is a general single batch running function. 
         '''
         
-        # Calculate Features with loss attention if exist
-        self.features, self.loss_attention, self.feature_maps = self.networks['feat_model'](inputs, labels, self.class_count)
-        # self.features, self.loss_attention = self.networks['feat_model'](inputs, labels, self.class_count)
+        # Calculate Features
+        self.features, self.feature_maps = self.networks['feat_model'](inputs, labels, self.class_count)
         
         # During training and validation, calculate centers if needed to 
         if phase != 'test':
@@ -194,7 +196,7 @@ class model ():
                 self.centers = None
 
         # Calculate logits with classifier
-        self.logits, self.loss_relation, self.slow_fast_feature = self.networks['classifier'](self.features, labels, self.centers, self.class_count)
+        self.logits, self.slow_fast_feature = self.networks['classifier'](self.features, labels, self.centers, self.class_count)
         
         if output_logits:
 
@@ -230,17 +232,6 @@ class model ():
                     self.loss_feat = self.loss_feat * self.criterion_weights['FeatureLoss']
                     # Add feature loss to total loss
                     self.loss += self.loss_feat
-
-                # If needed, obtain attention loss from feature model
-                # if attention:
-                if self.loss_attention:
-                    # self.loss_attention = self.networks['feat_model'].loss_attention
-                    # self.loss_relation = self.networks['classifier'].loss_relation
-                    # Add attention loss to total loss
-                    self.loss += self.loss_attention
-
-                if self.loss_relation:
-                    self.loss += self.loss_relation
 
             if phase == 'train':
 
@@ -364,7 +355,6 @@ class model ():
                             # If training, forward with loss, and no top 5 accuracy calculation
                             self.batch_run(inputs, labels, loss=True, top5=False,
                                          centers=self.relations['centers'],
-                                         attention=self.relations['attention'],
                                          phase=phase)
 
                             # After back-propagation, training step + 1
@@ -397,7 +387,6 @@ class model ():
                             # In validation or testing, forward with top 5 accuracy
                             self.batch_run(inputs, labels, loss=False, top5=False if self.test_open else True,
                                          centers=self.relations['centers'],
-                                         attention=self.relations['attention'],
                                          phase=phase)
 
                             # Record top 1 running correct

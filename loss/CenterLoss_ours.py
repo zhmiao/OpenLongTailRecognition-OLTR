@@ -75,5 +75,5 @@ class CenterlossFunc(Function):
 
     
 def create_loss (feat_dim=512, num_classes=1000):
-    print('Loading Center Loss.')
+    print('Loading Center Loss (ours).')
     return CenterLoss(num_classes, feat_dim)

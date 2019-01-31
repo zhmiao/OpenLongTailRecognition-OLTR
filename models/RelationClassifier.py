@@ -7,65 +7,23 @@ import pdb
 
 class Relation_Classifier(nn.Module):
     
-    def __init__(self, feat_dim=2048, num_classes=1000, stage1_weights=None):
+    def __init__(self, feat_dim=2048, num_classes=1000, stage1_weights=False, dataset=None):
         super(Relation_Classifier, self).__init__()
         self.num_classes = num_classes
         self.fc_channel = nn.Linear(feat_dim, feat_dim)
         self.fc_classifier_stage1 = nn.Linear(feat_dim, num_classes)
 
-        # if self.stage1_weights:
-        #     self.load_stage1_weights (self.stage1_weights)
-
-        if stage1_weights == 'imagenet_st1':
-            print('Loading ImageNet Stage 1 Classifier Weights.')
+        if stage1_weights:
+            assert(dataset)
+            print('Loading %s Stage 1 Classifier Weights.' % dataset)
             self.fc_classifier_stage1 = init_weights(model=self.fc_classifier_stage1,
-                                                     weights_path='./logs/Imagenet_LT/stage1/final_model_checkpoint.pth',
+                                                     weights_path='./logs/%s/stage1/final_model_checkpoint.pth' % dataset,
                                                      classifier=True)
-        
-        elif stage1_weights == 'sun_st1':
-            print('Loading SUN Stage 1 Classifier Weights.')
-            self.fc_classifier_stage1 = init_weights(model=self.fc_classifier_stage1,
-                                                     weights_path='./logs/SUN_LT/stage1/final_model_checkpoint.pth',
-                                                     classifier=True)
-
-        elif stage1_weights == 'places_st1':
-            print('Loading PLACES Stage 1 Classifier Weights.')
-            self.fc_classifier_stage1 = init_weights(model=self.fc_classifier_stage1,
-                                                     weights_path='./logs/Places_LT/stage1/final_model_checkpoint.pth',
-                                                     classifier=True)
-
         else:
             print('Random initialized classifier weights.')
         
         self.crossentropy_loss = nn.CrossEntropyLoss()
         self.cosnorm_classifier = CosNorm_Classifier(feat_dim, num_classes)
-
-    # def load_weights(self, weights_dir):
-    #     weights = torch.load(weights_dir)
-    #     weights = weights['state_dict_best']['classifier']
-    #     weights = {k: weights['module.fc.' + k] if 'module.fc.' + k in weights else self.fc_classifier_stage1.state_dict()[k] 
-    #                for k in self.fc_classifier_stage1.state_dict()}
-    #     return weights
-
-    # def load_stage1_weights (self, stage1_weights):
-
-    #     if stage1_weights == 'plain_fc':
-    #         print('Loading ImageNet Pretrained Classifier Weights.')
-    #         weights = self.load_weights('./pretrained_weights/imagenet_plain_resnet10_fc.pth')
-
-    #     elif stage1_weights == 'sun_pre':
-    #         print('Loading SUN Pretrained Classifier Weights.')
-    #         weights = self.load_weights('./pretrained_weights/sun_pretrained_resnet152.pth')
-            
-    #     elif stage1_weights == 'sun_pre_old':
-    #         print('Loading SUN Pretrained Classifier Weights.')
-    #         weights = self.load_weights('./pretrained_weights/sun_pretrained_resnet152.pth.old')
-                    
-    #     elif stage1_weights == 'places_pre':
-    #         print('Loading PLACES Pretrained Classifier Weights.')
-    #         weights = self.load_weights('./pretrained_weights/places_pretrained_resnet152.pth')
-            
-    #     self.fc_classifier_stage1.load_state_dict(weights)
         
     def forward(self, x, labels, centers, class_count, *args):
         
@@ -97,6 +55,6 @@ class Relation_Classifier(nn.Module):
 
         return logits, [slow_feature, fast_feature]
     
-def create_model(feat_dim=2048, num_classes=1000, stage1_weights=None):
+def create_model(feat_dim=2048, num_classes=1000, stage1_weights=False, dataset=None):
     print('Loading Relation Classifier.')
-    return Relation_Classifier(feat_dim, num_classes, stage1_weights)
+    return Relation_Classifier(feat_dim, num_classes, stage1_weights, dataset)

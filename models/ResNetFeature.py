@@ -1,7 +1,7 @@
 import math
 import torch.nn as nn
 import torch.nn.functional as F
-from layers.SelfAttLayer_ours_update import SelfAttLayer
+from layers.SelfAttLayer import SelfAttLayer
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
@@ -160,4 +160,4 @@ class ResNet(nn.Module):
         if self.use_dropout:
             x = self.dropout(x)
 
-        return x, None, feature_maps
+        return x, feature_maps

@@ -5,7 +5,7 @@ import os
 
 def find_classes_open(dir):
     
-    classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+    classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d)) and not d.startswith('.')]
     
     if 'openset' in classes:
 

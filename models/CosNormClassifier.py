@@ -19,7 +19,7 @@ class CosNorm_Classifier(nn.Module):
         stdv = 1. / math.sqrt(self.weight.size(1))
         self.weight.data.uniform_(-stdv, stdv)
 
-    def forward(self, input, label, *args):
+    def forward(self, input, *args):
         norm_x = torch.norm(input, 2, 1, keepdim=True)
         ex = (norm_x / (1 + norm_x)) * (input / norm_x)
         ew = self.weight / torch.norm(self.weight, 2, 1, keepdim=True)

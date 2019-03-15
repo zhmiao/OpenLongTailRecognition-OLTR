@@ -145,10 +145,10 @@ class ResNet(nn.Module):
         x = self.layer3(x)
         x = self.layer4(x)
 
-        feature_maps = [x]
-
         if self.use_selfatt:
             x, feature_maps = self.selfatt(x)
+        else:
+            feature_maps = None
 
         x = self.avgpool(x)
         

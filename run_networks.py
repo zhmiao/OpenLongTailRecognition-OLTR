@@ -139,7 +139,7 @@ class model ():
             for inputs, labels, _ in tqdm(self.data['train_plain'][0]):
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
                 # Calculate Features of each training data
-                features, _ = self.networks['feat_model'](inputs, labels, self.class_count)
+                features, _ = self.networks['feat_model'](inputs, labels)
                 # Add all calculated features to center tensor
                 for i in range(len(labels)):
                     label = labels[i]
@@ -186,7 +186,7 @@ class model ():
         '''
         
         # Calculate Features
-        self.features, self.feature_maps = self.networks['feat_model'](inputs, labels, self.class_count)
+        self.features, self.feature_maps = self.networks['feat_model'](inputs)
         
         # During training and validation, calculate centers if needed to 
         if phase != 'test':
@@ -196,7 +196,7 @@ class model ():
                 self.centers = None
 
         # Calculate logits with classifier
-        self.logits, self.slow_fast_feature = self.networks['classifier'](self.features, labels, self.centers, self.class_count)
+        self.logits, self.slow_fast_feature = self.networks['classifier'](self.features, self.centers, self.class_count)
         
         if output_logits:
 

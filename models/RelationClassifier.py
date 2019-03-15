@@ -25,7 +25,7 @@ class Relation_Classifier(nn.Module):
         self.crossentropy_loss = nn.CrossEntropyLoss()
         self.cosnorm_classifier = CosNorm_Classifier(feat_dim, num_classes)
         
-    def forward(self, x, labels, centers, class_count, *args):
+    def forward(self, x, centers, class_count, *args):
         
         slow_feature = x
 
@@ -51,7 +51,7 @@ class Relation_Classifier(nn.Module):
 
         fast_feature = channel_selector * centers_cur
         
-        logits = self.cosnorm_classifier(x, labels)
+        logits = self.cosnorm_classifier(x)
 
         return logits, [slow_feature, fast_feature]
     

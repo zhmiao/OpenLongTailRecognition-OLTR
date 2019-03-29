@@ -1,54 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
+from sklearn.metrics import f1_score
+import importlib
+import pdb
 
-def print_write(print_str, log_file):
-    print(*print_str)
-    with open(log_file, 'a') as f:
-        print(*print_str, file=f)
-
-def class_num_count (train_data):
-
-    input_samples = np.array(train_data.dataset.samples)
-
-    labels = input_samples[:, 1].astype(int)
-
-    class_data_num = []
-
-    for l in np.unique(labels):
-        class_data_num.append(len(labels[labels == l]))
-        
-    return class_data_num
-
-def shot_acc (class_count, class_correct, class_total, 
-              many_shot_thr=100, low_shot_thr=20):
-    
-    many_shot = []
-    median_shot = []
-    low_shot = []
-
-    for i in range(len(class_count)):
-        if class_count[i] > many_shot_thr:
-            many_shot.append((class_correct[i] / class_total[i]).item())
-        elif class_count[i] < low_shot_thr:
-            low_shot.append((class_correct[i] / class_total[i]).item())
-        else:
-            median_shot.append((class_correct[i] / class_total[i]).item())
-            
-    return np.mean(many_shot), np.mean(median_shot), np.mean(low_shot)
-
-def dataset_dist (in_loader):
-
-    """Example, dataset_dist(data['train'][0])"""
-    
-    label_list = np.array([x[1] for x in in_loader.dataset.samples])
-    total_num = len(data_list)
-
-    distribution = []
-    for l in np.unique(label_list):
-        distribution.append((l, len(label_list[label_list == l])/total_num))
-        
-    return distribution
+def source_import(file_path):
+    """This function imports python module directly from source code using importlib"""
+    spec = importlib.util.spec_from_file_location('', file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 def batch_show(inp, title=None):
     """Imshow for Tensor."""
@@ -61,18 +23,18 @@ def batch_show(inp, title=None):
     plt.imshow(inp)
     if title is not None:
         plt.title(title)
-        
-def init_weights(model, weights_path, caffe=False, classifier=False):
-    
+
+def print_write(print_str, log_file):
+    print(*print_str)
+    with open(log_file, 'a') as f:
+        print(*print_str, file=f)
+
+def init_weights(model, weights_path, caffe=False, classifier=False):  
     """Initialize weights"""
-
     print('Pretrained %s weights path: %s' % ('classifier' if classifier else 'feature model',
-                                              weights_path))
-    
-    weights = torch.load(weights_path)
-    
+                                              weights_path))    
+    weights = torch.load(weights_path)   
     if not classifier:
-
         if caffe:
             weights = {k: weights[k] if k in weights else model.state_dict()[k] 
                        for k in model.state_dict()}
@@ -80,30 +42,91 @@ def init_weights(model, weights_path, caffe=False, classifier=False):
             weights = weights['state_dict_best']['feat_model']
             weights = {k: weights['module.' + k] if 'module.' + k in weights else model.state_dict()[k] 
                        for k in model.state_dict()}
-
-    else:
-        
+    else:      
         weights = weights['state_dict_best']['classifier']
         weights = {k: weights['module.fc.' + k] if 'module.fc.' + k in weights else model.state_dict()[k] 
                    for k in model.state_dict()}
-
-    model.load_state_dict(weights)
-    
+    model.load_state_dict(weights)   
     return model
 
-def F_measure(preds, labels):
+def shot_acc (logits, labels, train_data, many_shot_thr=100, low_shot_thr=20):
 
-    true_pos = 0.
-    false_pos = 0.
-    false_neg = 0.
+    training_samples = np.array(train_data.dataset.samples)
+    training_labels = training_samples[:, 1].astype(int)
 
-    for i in range(len(labels)):
+    _, preds = torch.max(logits, 1)
+    preds = preds.detach().cpu().numpy()
+    labels = labels.detach().cpu().numpy()
+    train_class_count = []
+    test_class_count = []
+    class_correct = []
+    for l in np.unique(labels):
+        train_class_count.append(len(training_labels[training_labels == l]))
+        test_class_count.append(len(labels[labels == l]))
+        class_correct.append((preds[labels == l] == labels[labels == l]).sum())
 
-        true_pos += 1 if preds[i] == labels[i] and labels[i] != -1 else 0
-        false_pos += 1 if preds[i] != labels[i] and labels[i] != -1 else 0
-        false_neg += 1 if preds[i] != labels[i] and labels[i] == -1 else 0
+    many_shot = []
+    median_shot = []
+    low_shot = []
+    for i in range(len(train_class_count)):
+        if train_class_count[i] > many_shot_thr:
+            many_shot.append((class_correct[i] / test_class_count[i]))
+        elif train_class_count[i] < low_shot_thr:
+            low_shot.append((class_correct[i] / test_class_count[i]))
+        else:
+            median_shot.append((class_correct[i] / test_class_count[i]))          
+    return np.mean(many_shot), np.mean(median_shot), np.mean(low_shot)
+        
+def F_measure(logits, labels, openset=False):
+    _, preds = torch.max(logits, 1)
+    if openset:
+        # f1 score for openset evaluation
+        true_pos = 0.
+        false_pos = 0.
+        false_neg = 0.
+        
+        for i in range(len(labels)):
+            true_pos += 1 if preds[i] == labels[i] and labels[i] != -1 else 0
+            false_pos += 1 if preds[i] != labels[i] and labels[i] != -1 and preds[i] != -1 else 0
+            false_neg += 1 if preds[i] != labels[i] and labels[i] == -1 else 0
 
-    precision = true_pos / (true_pos + false_pos)
-    recall = true_pos / (true_pos + false_neg)
+        precision = true_pos / (true_pos + false_pos)
+        recall = true_pos / (true_pos + false_neg)
+        return 2 * ((precision * recall) / (precision + recall + 1e-12))
+    else:
+        # Regular f1 score
+        return f1_score(labels.detach().cpu().numpy(), preds.detach().cpu().numpy(), average='macro')
 
-    return 2 * ((precision * recall) / (precision + recall + 1e-12))
+def mic_acc_cal(logits, labels, top5=False):
+    _, preds = torch.max(logits, 1)
+    acc_mic_top1 = (preds == labels).sum().item() / len(labels)
+    # If needed, calculate Top 5 prediction
+    if top5:
+        _, preds_top5 = logits.detach().topk(5, 1)
+        correct_top5 = torch.tensor([1 if labels[i] in preds_top5[i] else 0 
+                                     for i in range(len(labels))])
+        acc_mic_top5 = correct_top5.sum().item() / len(labels)
+        return acc_mic_top1, acc_mic_top5
+    else:
+        return acc_mic_top1
+
+# def dataset_dist (in_loader):
+
+#     """Example, dataset_dist(data['train'][0])"""
+    
+#     label_list = np.array([x[1] for x in in_loader.dataset.samples])
+#     total_num = len(data_list)
+
+#     distribution = []
+#     for l in np.unique(label_list):
+#         distribution.append((l, len(label_list[label_list == l])/total_num))
+        
+#     return distribution
+
+# def class_num_count (train_data):
+#     input_samples = np.array(train_data.dataset.samples)
+#     labels = input_samples[:, 1].astype(int)
+#     class_data_num = []
+#     for l in np.unique(labels):
+#         class_data_num.append(len(labels[labels == l]))  
+#     return class_data_num

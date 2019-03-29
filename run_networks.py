@@ -1,5 +1,4 @@
 import os
-import imp
 import copy
 import torch
 import torch.nn as nn
@@ -7,14 +6,14 @@ import torch.optim as optim
 import torch.nn.functional as F
 from tqdm import tqdm
 from utils import *
+import time
 import numpy as np
 import warnings
 import pdb
 
 class model ():
     
-    def __init__(self, config, data, use_step=False, debug_mode=False, 
-        test=False, test_open=False):
+    def __init__(self, config, data, use_step=False, test=False):
         
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.config = config
@@ -23,14 +22,6 @@ class model ():
         self.data = data
         self.use_step = use_step
         self.test_mode = test
-        self.test_open = test_open
-        
-        if 'train' in self.data.keys():
-            self.class_count = class_num_count (self.data['train'][0])
-        else:
-            warnings.warn('Input data do not have training set. Class count can not be calculated',
-                          UserWarning)
-            self.class_count = None
 
         # If using steps for training, we need to calculate training steps 
         # for each epoch based on actual number of training data instead of 
@@ -38,28 +29,24 @@ class model ():
         if self.use_step and test == False:
             print('Using steps for training.')
             self.training_data_num = self.data['train'][1]
-            self.total_steps = int(self.training_data_num \
-                                 * self.training_opt['num_epochs'] \
-                                 / self.training_opt['batch_size'])
             self.epoch_steps = int(self.training_data_num  \
                                    / self.training_opt['batch_size'])
         
         # If not under debug mode, we need to initialize the models,
         # criterions, and centers if needed.
-        if not debug_mode:
-            self.scheduler_params = self.training_opt['scheduler_params']
-            self.init_models()
-            if not self.test_mode:
-                self.init_criterions()
-                if self.relations['init_centers']:
-                    self.init_centers()
-
-        if test_open:
-            print('Under openset test mode. Open threshold is %.1f' 
-                  % self.training_opt['open_threshold'])
-
-
-    def init_models(self):
+        self.scheduler_params = self.training_opt['scheduler_params']
+        self.init_models()
+        if not self.test_mode:
+            self.init_criterions()
+            if self.relations['init_centers']:
+                self.criterions['FeatureLoss'].centers.data = self.centers_cal(self.data['train_plain'][0])
+            
+        # Set up log file
+        self.log_file = os.path.join(self.training_opt['log_dir'], 'log.txt')
+        if os.path.isfile(self.log_file):
+            os.remove(self.log_file)
+        
+    def init_models(self, optimizer=True):
         
         networks_defs = self.config['networks']
         self.networks = {}
@@ -75,7 +62,7 @@ class model ():
 
             # pdb.set_trace()
 
-            self.networks[key] = imp.load_source('', def_file).create_model(*model_args)
+            self.networks[key] = source_import(def_file).create_model(*model_args)
             self.networks[key] = nn.DataParallel(self.networks[key]).to(self.device)
             
             if 'fix' in val and val['fix']:
@@ -107,7 +94,7 @@ class model ():
         for key, val in criterion_defs.items():
             def_file = val['def_file']
             loss_args = val['loss_params'].values()
-            self.criterions[key] = imp.load_source('', def_file).create_loss(*loss_args).to(self.device)
+            self.criterions[key] = source_import(def_file).create_loss(*loss_args).to(self.device)
             self.criterion_weights[key] = val['weight']
           
             if val['optim_params']:
@@ -125,61 +112,7 @@ class model ():
             else:
                 self.criterion_optimizer = None
 
-    def init_centers(self):
-        initial_centers = torch.zeros(self.training_opt['num_classes'],
-                                      self.training_opt['feature_dim']).cuda()
-
-        print('Calculating initial centers.')
-
-        # Calculate initial centers only on un-upsampled training data.
-        with torch.set_grad_enabled(False):
-
-            self.networks['feat_model'].eval()
-
-            for inputs, labels, _ in tqdm(self.data['train_plain'][0]):
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
-                # Calculate Features of each training data
-                features, _ = self.networks['feat_model'](inputs, labels)
-                # Add all calculated features to center tensor
-                for i in range(len(labels)):
-                    label = labels[i]
-                    initial_centers[label] += features[i]
-
-        # Average summed features with class count
-        initial_centers /= torch.tensor(self.class_count).float().unsqueeze(1).cuda()
-
-        # Assign initial centers
-        self.criterions['FeatureLoss'].centers.data = initial_centers
-
-    def output_logits(self):
-
-        for phase in ['train', 'test']:
-        # for phase in ['test']:
-
-            self.logits_out = np.empty((0, self.training_opt['num_classes']))
-            self.labels_out = np.empty(0, int)
-
-            with torch.set_grad_enabled(False):
-
-                print('Calculating logits for dataset %s' % (phase))
-
-                for model in self.networks.values():
-                    model.eval()
-
-                for inputs, labels, _ in tqdm(self.data[phase][0]):
-
-                    inputs, labels = inputs.to(self.device), labels.to(self.device)
-
-                    self.batch_run(inputs, labels, centers=self.relations['centers'], 
-                                   output_logits=True, phase='test')
-
-            print('Saving logits to %s' %(self.training_opt['log_dir']+'logits_out_%s.npz' % phase))
-            np.savez(self.training_opt['log_dir']+'logits_out_%s.npz' % phase,
-                     logits=self.logits_out, 
-                     labels=self.labels_out,)
-
-            
-    def batch_run (self, inputs, labels, loss=True, top5=False, centers=True, phase='train', output_logits=False):
+    def batch_forward (self, inputs, labels=None, centers=False, feature_ext=False, phase='train'):
 
         '''
         This is a general single batch running function. 
@@ -188,334 +121,242 @@ class model ():
         # Calculate Features
         self.features, self.feature_maps = self.networks['feat_model'](inputs)
         
-        # During training and validation, calculate centers if needed to 
-        if phase != 'test':
-            if centers and 'FeatureLoss' in self.criterions.keys():
-                self.centers = self.criterions['FeatureLoss'].centers.data
-            else:
-                self.centers = None
+        # If not just extracting features, calculate logits
+        if not feature_ext:
 
-        # Calculate logits with classifier
-        self.logits, self.slow_fast_feature = self.networks['classifier'](self.features, self.centers, self.class_count)
+            # During training, calculate centers if needed to 
+            if phase != 'test':
+                if centers and 'FeatureLoss' in self.criterion.keys():
+                    self.centers = self.criterion['FeatureLoss'].centers.data
+                else:
+                    self.centers = None
+
+            # Calculate logits with classifier
+            self.logits, self.slow_fast_feature = self.networks['classifier'](self.features, self.centers)
+
+    def batch_backward(self):
+
+        # Zero out optimizer gradients
+        self.model_optimizer.zero_grad()
+        if self.criterion_optimizer:
+            self.criterion_optimizer.zero_grad()
+
+        # Back-propagation from loss outputs
+        self.loss.backward()
+
+        # Step optimizers
+        self.model_optimizer.step()
+        if self.criterion_optimizer:
+            self.criterion_optimizer.step()
+
+    def batch_loss(self, labels):
+
+        # First, apply performance loss
+        self.loss_perf = self.criterion['PerformanceLoss'](self.logits, labels) \
+                    * self.criterion_weights['PerformanceLoss']
+
+        # Add performance loss to total loss
+        self.loss = self.loss_perf
+
+        # Apply loss on features if set up
+        if 'FeatureLoss' in self.criterion.keys():
+            self.loss_feat = self.criterion['FeatureLoss'](self.features, labels)
+            self.loss_feat = self.loss_feat * self.criterion_weights['FeatureLoss']
+            # Add feature loss to total loss
+            self.loss += self.loss_feat
+
+    def train(self):
+
+        # When training the network
         
-        if output_logits:
+        print_str = ['Phase: train']
+        print_write(print_str, self.log_file)
+        time.sleep(0.25)
 
-            self.logits_out = np.append(self.logits_out, self.logits.cpu().numpy(), axis=0)
-            self.labels_out = np.append(self.labels_out, labels.cpu().numpy(), axis=0)
+        # Initialize best model
+        best_model_weights = {}
+        best_model_weights['feat_model'] = copy.deepcopy(self.networks['feat_model'].state_dict())
+        best_model_weights['classifier'] = copy.deepcopy(self.networks['classifier'].state_dict())
+        best_acc = 0.0
+        best_epoch = 0
 
-        else:
+        # Initialize training step
+        # training_step = 1
+        # Ending epoch is training epoch
+        end_epoch = self.training_opt['num_epochs']
 
-            # Calculate Top 1 prediction, 
-            probs, self.preds_top1 = F.softmax(self.logits.detach(), dim=1).max(dim=1)
-            
-            # During open test, set -1 to data with highest probs under threshold
-            # setup in the config files
-            if self.test_open:
-                self.preds_top1[probs < self.training_opt['open_threshold']] = -1
-
-            # If needed, calculate Top 5 prediction
-            if top5:
-                _, self.preds_top5 = self.logits.detach().topk(5, 1)
-
-            # If needed, calculate losses
-            if loss:
-                # First, apply performance loss
-                self.loss_perf = self.criterions['PerformanceLoss'](self.logits, labels) \
-                            * self.criterion_weights['PerformanceLoss']
-
-                # Add performance loss to total loss
-                self.loss = self.loss_perf
-
-                # Apply loss on features if set up
-                if 'FeatureLoss' in self.criterions.keys():
-                    self.loss_feat = self.criterions['FeatureLoss'](self.features, labels)
-                    self.loss_feat = self.loss_feat * self.criterion_weights['FeatureLoss']
-                    # Add feature loss to total loss
-                    self.loss += self.loss_feat
-
-            if phase == 'train':
-
-                # pdb.set_trace()
-
-                # Zero out optimizer gradients
-                self.model_optimizer.zero_grad()
-                if self.criterion_optimizer:
-                    self.criterion_optimizer.zero_grad()
-
-                # Back-propagation from loss outputs
-                self.loss.backward()
-
-                # Step optimizers
-                self.model_optimizer.step()
-                if self.criterion_optimizer:
-                    self.criterion_optimizer.step()
-
-    def run(self, mode='train', calc_conf_mat=False):
-
-        # running mode can only be train or test
-        assert mode in ['train', 'test']
-        
-        if mode == 'train':
-            # When training the network
-            # Set up log file
-            log_file = os.path.join(self.training_opt['log_dir'], 
-                                    'log.txt' if not self.use_step else 'log_step.txt')
-            if os.path.isfile(log_file):
-                os.remove(log_file) 
-            
-            # Initialize best model
-            best_model_weights = {}
-            best_model_weights['feat_model'] = copy.deepcopy(self.networks['feat_model'].state_dict())
-            best_model_weights['classifier'] = copy.deepcopy(self.networks['classifier'].state_dict())
-            best_acc = 0.0
-            best_epoch = 0
-
-            # Initialize training step
-            training_step = 1
-            # Ending epoch is training epoch
-            end_epoch = self.training_opt['num_epochs']
-            # Phase list include both training and evaluation
-            phase_list = ['train', 'val']
-            # Swith for loop break under step training mode
-            need_break = True if self.use_step else False
-
-        else:
-            # When testing the network
-            # Only need one epoch for testing
-            end_epoch = 1
-            # Only need evaluation for testing
-            phase_list = ['test']
-            # No break under evaluation mode
-            need_break = False
+        for model in self.networks.values():
+            model.train()
 
         # Loop over epochs
         for epoch in range(1, end_epoch + 1):
+                
+            torch.cuda.empty_cache()
+            
+            # Set model modes and set scheduler
+            # In training, step optimizer scheduler and set model to train() 
+            self.model_optimizer_scheduler.step()
+            if self.criterion_optimizer:
+                self.criterion_optimizer_scheduler.step()
 
-            # Loop over training phase and validation phase
-            for phase in phase_list:
-                
-                torch.cuda.empty_cache()
-                
-                # test flag
-                # phase = 'val'
-                
-                # Set model modes and set scheduler
-                if phase == 'train':
-                    # In training, step optimizer scheduler and set model to train() 
-                    self.model_optimizer_scheduler.step()
-                    if self.criterion_optimizer:
-                        self.criterion_optimizer_scheduler.step()
-                    for model in self.networks.values():
-                        model.train()
-                else:
-                    # In validation or testing mode, set model to eval() and initialize running loss/correct
-                    for model in self.networks.values():
-                        model.eval()
-                    # Initialize running loss 
-                    # self.running_loss = 0.0
-                    # Initialize top 1 running correct
-                    self.class_total = torch.tensor([0. for i in range(self.training_opt['num_classes'])],
-                                                    requires_grad=False)
-                    self.running_correct_total_top1 = 0.
-                    self.class_correct_top1 = torch.tensor([0. for i in range(self.training_opt['num_classes'])],
-                                                           requires_grad=False)
+            # Iterate over dataset
+            for step, (inputs, labels, _) in enumerate(self.data['train'][0]):
 
-                    # Initialize top 5 running correct or f measure
-                    if self.test_open:
-                        self.running_f_measure = 0.
-                    else:
-                        self.running_correct_total_top5 = 0
-                        self.class_correct_top5 = torch.tensor([0. for i in range(self.training_opt['num_classes'])],
-                                                               requires_grad=False)
+                # Break when step equal to epoch step
+                if self.use_step and step == self.epoch_steps:
+                    break
+
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
+
+                # If on training phase, enable gradients
+                with torch.set_grad_enabled(True):
                         
+                    # If training, forward with loss, and no top 5 accuracy calculation
+                    self.batch_forward(inputs, labels, 
+                                       centers=self.relations['centers'],
+                                       phase='train')
+                    self.batch_loss(labels)
+                    self.batch_backward()
 
-                    # If under test mode, initialize confusion matrix
-                    if calc_conf_mat:
-                        self.conf_mat = torch.tensor([[0. for i in range(self.training_opt['num_classes'])]
-                                                          for j in range(self.training_opt['num_classes'])])
+                    # Output minibatch training results
+                    if step % self.training_opt['display_step'] == 0:
 
-                # Iterate over dataset
-                for self.inputs, self.labels, self.paths in (self.data[phase][0] \
-                                                             if phase == 'train' \
-                                                             else tqdm(self.data[phase][0])):
-                    inputs, labels = self.inputs.to(self.device), self.labels.to(self.device)
+                        minibatch_loss_feat = self.loss_feat.item() \
+                            if 'FeatureLoss' in self.criterion.keys() else None
+                        minibatch_loss_perf = self.loss_perf.item()
+                        minibatch_acc = mic_acc_cal(self.logits, labels)
 
-                    if need_break \
-                        and phase == 'train' \
-                        and training_step % self.epoch_steps == 0:
-                        break
+                        print_str = ['Epoch: [%d/%d]' 
+                                     % (epoch, self.training_opt['num_epochs']),
+                                     'Step: %5d' 
+                                     % (training_step),
+                                     'Minibatch_loss_feature: %.3f' 
+                                     % (minibatch_loss_feat) if minibatch_loss_feat else '',
+                                     'Minibatch_loss_performance: %.3f' 
+                                     % (minibatch_loss_perf),
+                                     'Minibatch_accuracy_micro: %.3f'
+                                      % (minibatch_acc)]
+                        print_write(print_str, self.log_file)
 
-                    # If on training phase, enable gradients
-                    with torch.set_grad_enabled(phase == 'train'):
-                        
-                        if phase == 'train':
-                            
-                            # Under step training mode, every time enters training loop, break switch set to True
-                            need_break = True if self.use_step else False
-                            # If training, forward with loss, and no top 5 accuracy calculation
-                            self.batch_run(inputs, labels, loss=True, top5=False,
-                                         centers=self.relations['centers'],
-                                         phase=phase)
+            # After every epoch, validation
+            self.eval(phase='val')
 
-                            # After back-propagation, training step + 1
-                            training_step += 1
+            # Under validation, the best model need to be updated
+            if self.eval_acc_mic > best_acc:
+                best_epoch = epoch
+                best_acc = self.eval_acc_mic
+                best_centers = self.centers
+                best_model_weights['feat_model'] = copy.deepcopy(self.networks['feat_model'].state_dict())
+                best_model_weights['classifier'] = copy.deepcopy(self.networks['classifier'].state_dict())
 
-                            # Output minibatch training results
-                            if training_step % self.training_opt['display_step'] == 0:
+        print()
+        print('Training Complete.')
 
-                                minibatch_loss_feat = self.loss_feat.item() \
-                                    if 'FeatureLoss' in self.criterions.keys() else None
-                                minibatch_loss_perf = self.loss_perf.item()
-                                minibatch_acc = (self.preds_top1 == labels).sum().item() \
-                                                / self.training_opt['batch_size']
-
-                                print_str = ['Epoch: [%d/%d]' 
-                                             % (epoch, self.training_opt['num_epochs']),
-                                             'Step: %5d' 
-                                             % (training_step),
-                                             'Minibatch_loss_feature: %.3f' 
-                                             % (minibatch_loss_feat) if minibatch_loss_feat else '',
-                                             'Minibatch_loss_performance: %.3f' 
-                                             % (minibatch_loss_perf),
-                                             'Minibatch_accuracy_micro: %.3f'
-                                              % (minibatch_acc)]
-                                print_write(print_str, log_file)
-
-                        else:
-                            # In evaluation loop, break switch set to False
-                            need_break = False
-                            # In validation or testing, forward with top 5 accuracy
-                            self.batch_run(inputs, labels, loss=False, top5=False if self.test_open else True,
-                                         centers=self.relations['centers'],
-                                         phase=phase)
-
-                            # Record top 1 running correct
-                            # Only count close set data here with true labels != -1
-                            correct_tensor_top1 = (self.preds_top1[labels != -1] == labels[labels != -1])
-                            self.running_correct_total_top1 += correct_tensor_top1.sum().item()
-                            # Record top 5 running correct if not using open set 
-                            # otherwise record f-measurement
-                            if self.test_open:
-                                self.running_f_measure += F_measure(self.preds_top1, labels) * inputs.shape[0]
-                            else:
-                                correct_tensor_top5 = torch.tensor([1 if labels[i] in self.preds_top5[i] else 0 
-                                                                    for i in range(len(labels))])
-                                self.running_correct_total_top5 += correct_tensor_top5.sum().item()
-                                
-                            # Record correct tensors per class
-                            # also, not counting true labels == -1
-                            for i in range(len(labels[labels != -1])):
-                                label = labels[labels != -1][i]
-                                self.class_total[label] += 1
-                                # Top 1
-                                self.class_correct_top1[label] += correct_tensor_top1[i].item()
-                                # Top 5
-                                if not self.test_open:
-                                    self.class_correct_top5[label] += correct_tensor_top5[i].item()
-                                # Conf Mat
-                                if calc_conf_mat:
-                                    pred_top1 = self.preds_top1[i]
-                                    self.conf_mat[label, pred_top1] += 1
-
-                # If under validation or testing, calculate accuracy on the validation set
-                if phase != 'train':
-
-                    # Top 1
-                    self.acc_mic_top1 = self.running_correct_total_top1 / self.class_total.sum().item()
-                    self.acc_mac_top1 = (self.class_correct_top1 / self.class_total).mean().item()
-                    self.many_acc_top1, \
-                    self.median_acc_top1, \
-                    self.low_acc_top1 = shot_acc(self.class_count, 
-                                                     self.class_correct_top1, 
-                                                     self.class_total)
-
-                    # Top 5 or f-measure
-                    if self.test_open:
-                        self.f_measure = self.running_f_measure / self.data[phase][1]
-                    else:
-                        self.acc_mic_top5 = self.running_correct_total_top5 / self.class_total.sum().item()
-                        self.acc_mac_top5 = (self.class_correct_top5 / self.class_total).mean().item()
-                        self.many_acc_top5, \
-                        self.median_acc_top5, \
-                        self.low_acc_top5 = shot_acc(self.class_count, 
-                                                         self.class_correct_top5,
-                                                         self.class_total)
-
-                    # Confusion matrix
-                    if calc_conf_mat:
-                       self.conf_mat = self.conf_mat/(self.class_total.reshape((len(self.class_total), 1)))
-                       np.save(self.training_opt['log_dir']+'conf_mat.npy', self.conf_mat.numpy())
-                       print('Confusion matrix saved to %s' % (self.training_opt['log_dir']+'conf_mat.npy'))
-
-                    # Print out accuracy
-
-                    # Top-1 accuracy and additional string
-                    print_str = ['Phase: %s' 
-                                 % (phase),
-                                 'Epoch: [%d/%d]' 
-                                 % (epoch, self.training_opt['num_epochs']),
-                                 '\n\n',
-                                 'Close set accuracies:',
-                                 '\n',
-                                 'Evaluation_accuracy_micro_top1: %.3f' 
-                                 % (self.acc_mic_top1),
-                                 'Evaluation_accuracy_macro_top1: %.3f' 
-                                 % (self.acc_mac_top1),
-                                 'Many_shot_accuracy_top1: %.3f' 
-                                 % (self.many_acc_top1),
-                                 'Median_shot_accuracy_top1: %.3f' 
-                                 % (self.median_acc_top1),
-                                 'Low_shot_accuracy_top1: %.3f' 
-                                 % (self.low_acc_top1),
-                                 '\n']
-
-                    # Additional accuracy string than top-1 accuracy (top 5 or f measure)
-                    add_str = ['\n',
-                               'Open set measurement:',
-                               '\n',
-                               'F-Measure: %.3f'
-                               % (self.f_measure)] if self.test_open else ['Evaluation_accuracy_micro_top5: %.3f' 
-                                                                            % (self.acc_mic_top5),
-                                                                            'Evaluation_accuracy_macro_top5: %.3f' 
-                                                                            % (self.acc_mac_top5),
-                                                                            'Many_shot_accuracy_top5: %.3f' 
-                                                                            % (self.many_acc_top5),
-                                                                            'Median_shot_accuracy_top5: %.3f' 
-                                                                            % (self.median_acc_top5),
-                                                                            'Low_shot_accuracy_top5: %.3f' 
-                                                                            % (self.low_acc_top5),]
-
-                    print_str += add_str
-
-                    if phase != 'test':
-                        print_write(print_str, log_file)
-                    else:
-                        print(*print_str)
-
-                    # pdb.set_trace()
-                    
-                    # Under validation, the best model need to be updated
-                    if phase == 'val' and self.acc_mac_top1 > best_acc:
-                        best_epoch = epoch
-                        best_acc = self.acc_mac_top1
-                        best_centers = self.centers
-                        best_model_weights['feat_model'] = copy.deepcopy(self.networks['feat_model'].state_dict())
-                        best_model_weights['classifier'] = copy.deepcopy(self.networks['classifier'].state_dict())
-
-                        # Save model every 5 epochs
-                        # if epoch % 5 == 0:
-                        #     self.save_model(epoch, centers=self.centers)
-
-        if mode == 'train':
-            print()
-            print('Training Complete.')
+        if save_best:
             print_str = ['Best validation accuracy is %.3f at epoch %d' % (best_acc, best_epoch)]
-            print_write(print_str, log_file)
+            print_write(print_str, self.log_file)
             # Save the best model and best centers if calculated
             self.save_model(epoch, best_epoch, best_model_weights, best_acc, centers=best_centers)
-    
+                
+        print('Done')
+
+    def eval(self, phase='val', openset=False):
+
+        print_str = ['Phase: %s' % (phase)]
+        print_write(print_str, self.log_file)
+        time.sleep(0.25)
+
+        # if test_open:
+        #     print('Under openset test mode. Open threshold is %.1f' 
+        #           % self.training_opt['open_threshold'])
+ 
+        torch.cuda.empty_cache()
+
+        # In validation or testing mode, set model to eval() and initialize running loss/correct
+        for model in self.networks.values():
+            model.eval()
+
+        self.total_logits = torch.empty((0, self.training_opt['num_classes'])).to(self.device)
+        self.total_labels = torch.empty(0, dtype=torch.long).to(self.device)
+        # self.total_paths = np.empty(0)
+
+        # Iterate over dataset
+        for inputs, labels, paths in tqdm(self.data[phase][0]):
+            inputs, labels = inputs.to(self.device), labels.to(self.device)
+
+            # If on training phase, enable gradients
+            with torch.set_grad_enabled(False):
+
+                # In validation or testing
+                self.batch_forward(inputs, labels, 
+                                   centers=self.relations['centers'],
+                                   phase=phase)
+                self.total_logits = torch.cat((self.total_logits, self.logits))
+                self.total_labels = torch.cat((self.total_labels, labels))
+                # self.total_paths = np.concatenate((self.total_paths, paths))
+
+        # Calculate the overall accuracy and F measurement
+        self.eval_acc_mic_top1= mic_acc_cal(self.total_logits[self.total_labels != -1],
+                                            self.total_labels[self.total_labels != -1])
+        self.eval_f_measure = F_measure(self.total_logits, self.total_labels, openset=openset)
+        self.many_acc_top1, \
+        self.median_acc_top1, \
+        self.low_acc_top1 = shot_acc(self.total_logits[self.total_labels != -1],
+                                     self.total_labels[self.total_labels != -1], 
+                                     self.data['train'][0])
+        # Top-1 accuracy and additional string
+        print_str = ['\n\n',
+                     'Phase: %s' 
+                     % (phase),
+                     '\n\n',
+                     'Evaluation_accuracy_micro_top1: %.3f' 
+                     % (self.eval_acc_mic_top1),
+                     '\n',
+                     'Averaged F-measure: %.3f' 
+                     % (self.eval_f_measure),
+                     '\n',
+                     'Many_shot_accuracy_top1: %.3f' 
+                     % (self.many_acc_top1),
+                     'Median_shot_accuracy_top1: %.3f' 
+                     % (self.median_acc_top1),
+                     'Low_shot_accuracy_top1: %.3f' 
+                     % (self.low_acc_top1),
+                     '\n']
+
+        if phase == 'val':
+            print_write(print_str, self.log_file)
+        else:
+            print(*print_str)
+            
+    def centers_cal(self, data):
+
+        centers = torch.zeros(self.training_opt['num_classes'],
+                                   self.training_opt['feature_dim']).cuda()
+
+        print('Calculating centers.')
+
+        for model in self.networks.values():
+            model.eval()
+
+        # Calculate initial centers only on training data.
+        with torch.set_grad_enabled(False):
+            
+            for inputs, labels, _ in tqdm(data):
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
+                # Calculate Features of each training data
+                self.batch_forward(inputs, feature_ext=True)
+                # Add all calculated features to center tensor
+                for i in range(len(labels)):
+                    label = labels[i]
+                    centers[label] += self.features[i]
+
+        # Average summed features with class count
+        centers /= torch.tensor(class_count(data)).float().unsqueeze(1).cuda()
+
+        return centers
+
     def load_model(self, epoch=None):
-        
+
         if not epoch:
             
             model_dir = os.path.join(self.training_opt['log_dir'], 
@@ -545,7 +386,11 @@ class model ():
             self.centers = checkpoint['centers'] if 'centers' in checkpoint else None
         
         for key, model in self.networks.items():
-            model.load_state_dict(model_state[key])
+
+            weights = model_state[key]
+            weights = {k: weights[k] for k in weights if k in model.state_dict()}
+            # model.load_state_dict(model_state[key])
+            model.load_state_dict(weights)
         
     
     def save_model(self, epoch, best_epoch=None, best_model_weights=None, best_acc=None, centers=None):

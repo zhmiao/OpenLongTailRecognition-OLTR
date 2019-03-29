@@ -1,10 +1,10 @@
 import os
-import imp
 import argparse
 import pprint
 from data import dataloader
 from run_networks import model
 import warnings
+from utils import source_import
 
 # ================
 # LOAD CONFIGURATIONS
@@ -30,7 +30,7 @@ output_conf_mat = args.output_conf_mat
 
 use_step = args.use_step
 
-config = imp.load_source("", args.config).config
+config = source_import(args.config).config
 training_opt = config['training_opt']
 relatin_opt = config['relations']
 dataset = training_opt['dataset']
@@ -45,7 +45,7 @@ if not test_mode:
 
     sampler_defs = training_opt['sampler']
     if sampler_defs:
-        sampler_dic = {'sampler': imp.load_source('', sampler_defs['def_file']).get_sampler(), 
+        sampler_dic = {'sampler': source_import(sampler_defs['def_file']).get_sampler(), 
                        'num_samples_cls': sampler_defs['num_samples_cls']}
     else:
         sampler_dic = None
@@ -57,7 +57,7 @@ if not test_mode:
 
     training_model = model(config, data, use_step=use_step, test=False)
 
-    training_model.run(mode='train')
+    training_model.train()
 
 else:
 
@@ -74,13 +74,15 @@ else:
             for x in ['train', 'test']}
 
     
-    training_model = model(config, data, use_step=use_step, test=True,
-                           test_open=test_open)
+    training_model = model(config, data, use_step=use_step, test=True)
     training_model.load_model(epoch=test_epoch)
+
+    training_model.eval(phase='test', openset=test_open)
     
-    if not output_logits:
-        training_model.run(mode='test', calc_conf_mat=output_conf_mat)
-    else:
-        training_model.output_logits()
+    # if output_logits:
+    #     training_model.output_logits()
+
+    # if output_conf_mat:
+    #     training_model.output_conf_mat()
         
 

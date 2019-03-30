@@ -49,12 +49,11 @@ def init_weights(model, weights_path, caffe=False, classifier=False):
     model.load_state_dict(weights)   
     return model
 
-def shot_acc (logits, labels, train_data, many_shot_thr=100, low_shot_thr=20):
+def shot_acc (preds, labels, train_data, many_shot_thr=100, low_shot_thr=20):
 
     training_samples = np.array(train_data.dataset.samples)
     training_labels = training_samples[:, 1].astype(int)
 
-    _, preds = torch.max(logits, 1)
     preds = preds.detach().cpu().numpy()
     labels = labels.detach().cpu().numpy()
     train_class_count = []
@@ -77,8 +76,8 @@ def shot_acc (logits, labels, train_data, many_shot_thr=100, low_shot_thr=20):
             median_shot.append((class_correct[i] / test_class_count[i]))          
     return np.mean(many_shot), np.mean(median_shot), np.mean(low_shot)
         
-def F_measure(logits, labels, openset=False):
-    _, preds = torch.max(logits, 1)
+def F_measure(preds, labels, openset=False, theta=None):
+    
     if openset:
         # f1 score for openset evaluation
         true_pos = 0.
@@ -97,18 +96,9 @@ def F_measure(logits, labels, openset=False):
         # Regular f1 score
         return f1_score(labels.detach().cpu().numpy(), preds.detach().cpu().numpy(), average='macro')
 
-def mic_acc_cal(logits, labels, top5=False):
-    _, preds = torch.max(logits, 1)
+def mic_acc_cal(preds, labels):
     acc_mic_top1 = (preds == labels).sum().item() / len(labels)
-    # If needed, calculate Top 5 prediction
-    if top5:
-        _, preds_top5 = logits.detach().topk(5, 1)
-        correct_top5 = torch.tensor([1 if labels[i] in preds_top5[i] else 0 
-                                     for i in range(len(labels))])
-        acc_mic_top5 = correct_top5.sum().item() / len(labels)
-        return acc_mic_top1, acc_mic_top5
-    else:
-        return acc_mic_top1
+    return acc_mic_top1
 
 # def dataset_dist (in_loader):
 

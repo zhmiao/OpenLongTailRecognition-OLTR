@@ -7,21 +7,11 @@ import pdb
 
 class Relation_Classifier(nn.Module):
     
-    def __init__(self, feat_dim=2048, num_classes=1000, stage1_weights=False, dataset=None):
+    def __init__(self, feat_dim=2048, num_classes=1000):
         super(Relation_Classifier, self).__init__()
         self.num_classes = num_classes
         self.fc_channel = nn.Linear(feat_dim, feat_dim)
         self.fc_classifier_stage1 = nn.Linear(feat_dim, num_classes)
-
-        if stage1_weights:
-            assert(dataset)
-            print('Loading %s Stage 1 Classifier Weights.' % dataset)
-            self.fc_classifier_stage1 = init_weights(model=self.fc_classifier_stage1,
-                                                     weights_path='./logs/%s/stage1/final_model_checkpoint.pth' % dataset,
-                                                     classifier=True)
-        else:
-            print('Random initialized classifier weights.')
-        
         self.crossentropy_loss = nn.CrossEntropyLoss()
         self.cosnorm_classifier = CosNorm_Classifier(feat_dim, num_classes)
         
@@ -55,6 +45,18 @@ class Relation_Classifier(nn.Module):
 
         return logits, [slow_feature, fast_feature]
     
-def create_model(feat_dim=2048, num_classes=1000, stage1_weights=False, dataset=None):
+def create_model(feat_dim=2048, num_classes=1000, stage1_weights=False, dataset=None, test=False, *args):
     print('Loading Relation Classifier.')
-    return Relation_Classifier(feat_dim, num_classes, stage1_weights, dataset)
+    clf = Relation_Classifier(feat_dim, num_classes)
+
+    if not test:
+        if stage1_weights:
+            assert(dataset)
+            print('Loading %s Stage 1 Classifier Weights.' % dataset)
+            clf.fc_classifier_stage1 = init_weights(model=clf.fc_classifier_stage1,
+                                                    weights_path='./logs/%s/stage1/final_model_checkpoint.pth' % dataset,
+                                                    classifier=True)
+        else:
+            print('Random initialized classifier weights.')
+
+    return clf

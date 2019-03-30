@@ -9,8 +9,9 @@ from utils import source_import
 # ================
 # LOAD CONFIGURATIONS
 
-data_root = {'ImageNet_LT': '/home/public/dataset/imagenet_LT/',
-             'Places_LT': '/home/public/dataset/Places365_LT/'}
+root = '/home/public/dataset'
+data_root = {'ImageNet_LT': os.path.join(root, 'imagenet_LT/'),
+             'Places_LT': os.path.join(root, 'Places365_LT/')}
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='./config/Imagenet_LT/Stage_1.py', type=str)

@@ -32,14 +32,20 @@ class model ():
             self.epoch_steps = int(self.training_data_num  \
                                    / self.training_opt['batch_size'])
         
-        # If not under debug mode, we need to initialize the models,
-        # criterions, and centers if needed.
-        self.scheduler_params = self.training_opt['scheduler_params']
+        # Initialize model
         self.init_models()
+
+        # Under training mode, initialize optimizers, schedulers, criterions, and centers
         if not self.test_mode:
+            # Initialize model optimizer and scheduler
+            print('Initializing model optimizer.')
+            self.scheduler_params = self.training_opt['scheduler_params']
+            self.model_optimizer, \
+            self.model_optimizer_scheduler = self.init_optimizers(self.model_optim_params_list)
             self.init_criterions()
             if self.relations['init_centers']:
-                self.criterions['FeatureLoss'].centers.data = self.centers_cal(self.data['train_plain'][0])
+                self.criterions['FeatureLoss'].centers.data = \
+                    self.centers_cal(self.data['train_plain'][0])
             
         # Set up log file
         self.log_file = os.path.join(self.training_opt['log_dir'], 'log.txt')
@@ -50,7 +56,7 @@ class model ():
         
         networks_defs = self.config['networks']
         self.networks = {}
-        self.model_optimizer_params = []
+        self.model_optim_params_list = []
 
         print("Using", torch.cuda.device_count(), "GPUs.")
         
@@ -58,9 +64,8 @@ class model ():
 
             # Networks
             def_file = val['def_file']
-            model_args = val['params'].values()
-
-            # pdb.set_trace()
+            model_args = list(val['params'].values())
+            model_args.append(self.test_mode)
 
             self.networks[key] = source_import(def_file).create_model(*model_args)
             self.networks[key] = nn.DataParallel(self.networks[key]).to(self.device)
@@ -74,19 +79,13 @@ class model ():
 
             # Optimizer list
             optim_params = val['optim_params']
-            self.model_optimizer_params.append({'params': self.networks[key].parameters(),
+            self.model_optim_params_list.append({'params': self.networks[key].parameters(),
                                                 'lr': optim_params['lr'],
                                                 'momentum': optim_params['momentum'],
                                                 'weight_decay': optim_params['weight_decay']})
 
-        # Initialize model optimizer and scheduler
-        print('Initializing model optimizer.')
-        self.model_optimizer = optim.SGD(self.model_optimizer_params)
-        self.model_optimizer_scheduler = optim.lr_scheduler.StepLR(self.model_optimizer,
-                                                                   step_size=self.scheduler_params['step_size'],
-                                                                   gamma=self.scheduler_params['gamma'])
-
     def init_criterions(self):
+
         criterion_defs = self.config['criterions']
         self.criterions = {}
         self.criterion_weights = {}
@@ -100,27 +99,31 @@ class model ():
             if val['optim_params']:
                 print('Initializing criterion optimizer.')
                 optim_params = val['optim_params']
+                optim_params = [{'params': self.criterions[key].parameters(),
+                                'lr': optim_params['lr'],
+                                'momentum': optim_params['momentum'],
+                                'weight_decay': optim_params['weight_decay']}]
                 # Initialize criterion optimizer and scheduler
-                self.criterion_optimizer = optim.SGD(params=self.criterions[key].parameters(),
-                                                 lr=optim_params['lr'],
-                                                 momentum=optim_params['momentum'],
-                                                 weight_decay=optim_params['weight_decay'])
-
-                self.criterion_optimizer_scheduler = optim.lr_scheduler.StepLR(self.criterion_optimizer,
-                                                                               step_size=self.scheduler_params['step_size'],
-                                                                               gamma=self.scheduler_params['gamma'])
+                self.criterion_optimizer, \
+                self.criterion_optimizer_scheduler = self.init_optimizers(optim_params)
             else:
                 self.criterion_optimizer = None
 
-    def batch_forward (self, inputs, labels=None, centers=False, feature_ext=False, phase='train'):
+    def init_optimizers(self, optim_params):
+        optimizer = optim.SGD(optim_params)
+        scheduler = optim.lr_scheduler.StepLR(optimizer,
+                                              step_size=self.scheduler_params['step_size'],
+                                              gamma=self.scheduler_params['gamma'])
+        return optimizer, scheduler
 
+    def batch_forward (self, inputs, labels=None, centers=False, feature_ext=False, phase='train'):
         '''
         This is a general single batch running function. 
         '''
-        
+
         # Calculate Features
         self.features, self.feature_maps = self.networks['feat_model'](inputs)
-        
+
         # If not just extracting features, calculate logits
         if not feature_ext:
 
@@ -135,15 +138,12 @@ class model ():
             self.logits, self.slow_fast_feature = self.networks['classifier'](self.features, self.centers)
 
     def batch_backward(self):
-
         # Zero out optimizer gradients
         self.model_optimizer.zero_grad()
         if self.criterion_optimizer:
             self.criterion_optimizer.zero_grad()
-
         # Back-propagation from loss outputs
         self.loss.backward()
-
         # Step optimizers
         self.model_optimizer.step()
         if self.criterion_optimizer:
@@ -168,7 +168,6 @@ class model ():
     def train(self):
 
         # When training the network
-        
         print_str = ['Phase: train']
         print_write(print_str, self.log_file)
         time.sleep(0.25)
@@ -266,9 +265,9 @@ class model ():
         print_write(print_str, self.log_file)
         time.sleep(0.25)
 
-        # if test_open:
-        #     print('Under openset test mode. Open threshold is %.1f' 
-        #           % self.training_opt['open_threshold'])
+        if openset:
+            print('Under openset test mode. Open threshold is %.1f' 
+                  % self.training_opt['open_threshold'])
  
         torch.cuda.empty_cache()
 
@@ -295,13 +294,23 @@ class model ():
                 self.total_labels = torch.cat((self.total_labels, labels))
                 # self.total_paths = np.concatenate((self.total_paths, paths))
 
+
+        probs, preds = F.softmax(self.total_logits.detach(), dim=1).max(dim=1)
+
+        if openset:
+            preds[probs < self.training_opt['open_threshold']] = -1
+            self.openset_acc = mic_acc_cal(preds[self.total_labels == -1],
+                                            self.total_labels[self.total_labels == -1])
+            print('\n\nOpenset Accuracy: %.3f' % self.openset_acc)
+
         # Calculate the overall accuracy and F measurement
-        self.eval_acc_mic_top1= mic_acc_cal(self.total_logits[self.total_labels != -1],
+        self.eval_acc_mic_top1= mic_acc_cal(preds[self.total_labels != -1],
                                             self.total_labels[self.total_labels != -1])
-        self.eval_f_measure = F_measure(self.total_logits, self.total_labels, openset=openset)
+        self.eval_f_measure = F_measure(preds, self.total_labels, openset=openset,
+                                        theta=self.training_opt['open_threshold'])
         self.many_acc_top1, \
         self.median_acc_top1, \
-        self.low_acc_top1 = shot_acc(self.total_logits[self.total_labels != -1],
+        self.low_acc_top1 = shot_acc(preds[self.total_labels != -1],
                                      self.total_labels[self.total_labels != -1], 
                                      self.data['train'][0])
         # Top-1 accuracy and additional string

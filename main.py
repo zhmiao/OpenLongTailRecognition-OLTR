@@ -16,20 +16,13 @@ data_root = {'ImageNet_LT': os.path.join(root, 'imagenet_LT/'),
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='./config/Imagenet_LT/Stage_1.py', type=str)
 parser.add_argument('--test', default=False)
-parser.add_argument('--test_epoch', default=None, type=int)
 parser.add_argument('--test_open', default=False)
-parser.add_argument('--use_step', default=False)
 parser.add_argument('--output_logits', default=False)
-parser.add_argument('--output_conf_mat', default=False)
 args = parser.parse_args()
 
 test_mode = args.test
-test_epoch = args.test_epoch
 test_open = args.test_open
 output_logits = args.output_logits
-output_conf_mat = args.output_conf_mat
-
-use_step = args.use_step
 
 config = source_import(args.config).config
 training_opt = config['training_opt']
@@ -56,7 +49,7 @@ if not test_mode:
                                     sampler_dic=sampler_dic, num_workers=training_opt['num_workers'])
             for x in (['train', 'val', 'train_plain'] if relatin_opt['init_centers'] else ['train', 'val'])}
 
-    training_model = model(config, data, use_step=use_step, test=False)
+    training_model = model(config, data, test=False)
 
     training_model.train()
 
@@ -75,15 +68,11 @@ else:
             for x in ['train', 'test']}
 
     
-    training_model = model(config, data, use_step=use_step, test=True)
-    training_model.load_model(epoch=test_epoch)
-
+    training_model = model(config, data, test=True)
+    training_model.load_model()
     training_model.eval(phase='test', openset=test_open)
     
-    # if output_logits:
-    #     training_model.output_logits()
-
-    # if output_conf_mat:
-    #     training_model.output_conf_mat()
+    if output_logits:
+        training_model.output_logits(openset=test_open)
         
-
+print('ALL COMPLETED.')

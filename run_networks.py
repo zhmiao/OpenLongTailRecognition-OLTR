@@ -13,30 +13,29 @@ import pdb
 
 class model ():
     
-    def __init__(self, config, data, use_step=False, test=False):
+    def __init__(self, config, data, test=False):
         
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.config = config
         self.training_opt = self.config['training_opt']
         self.relations = self.config['relations']
         self.data = data
-        self.use_step = use_step
         self.test_mode = test
-
-        # If using steps for training, we need to calculate training steps 
-        # for each epoch based on actual number of training data instead of 
-        # oversampled data number 
-        if self.use_step and test == False:
-            print('Using steps for training.')
-            self.training_data_num = self.data['train'][1]
-            self.epoch_steps = int(self.training_data_num  \
-                                   / self.training_opt['batch_size'])
         
         # Initialize model
         self.init_models()
 
-        # Under training mode, initialize optimizers, schedulers, criterions, and centers
+        # Under training mode, initialize training steps, optimizers, schedulers, criterions, and centers
         if not self.test_mode:
+
+            # If using steps for training, we need to calculate training steps 
+            # for each epoch based on actual number of training data instead of 
+            # oversampled data number 
+            print('Using steps for training.')
+            self.training_data_num = self.data['train'][1]
+            self.epoch_steps = int(self.training_data_num  \
+                                   / self.training_opt['batch_size'])
+
             # Initialize model optimizer and scheduler
             print('Initializing model optimizer.')
             self.scheduler_params = self.training_opt['scheduler_params']
@@ -202,7 +201,7 @@ class model ():
             for step, (inputs, labels, _) in enumerate(self.data['train'][0]):
 
                 # Break when step equal to epoch step
-                if self.use_step and step == self.epoch_steps:
+                if step == self.epoch_steps:
                     break
 
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
@@ -277,7 +276,7 @@ class model ():
 
         self.total_logits = torch.empty((0, self.training_opt['num_classes'])).to(self.device)
         self.total_labels = torch.empty(0, dtype=torch.long).to(self.device)
-        # self.total_paths = np.empty(0)
+        self.total_paths = np.empty(0)
 
         # Iterate over dataset
         for inputs, labels, paths in tqdm(self.data[phase][0]):
@@ -292,7 +291,7 @@ class model ():
                                    phase=phase)
                 self.total_logits = torch.cat((self.total_logits, self.logits))
                 self.total_labels = torch.cat((self.total_labels, labels))
-                # self.total_paths = np.concatenate((self.total_paths, paths))
+                self.total_paths = np.concatenate((self.total_paths, paths))
 
 
         probs, preds = F.softmax(self.total_logits.detach(), dim=1).max(dim=1)
@@ -364,35 +363,18 @@ class model ():
 
         return centers
 
-    def load_model(self, epoch=None):
-
-        if not epoch:
+    def load_model(self):
             
-            model_dir = os.path.join(self.training_opt['log_dir'], 
-                                     'final_model_checkpoint.pth' \
-                                     if not self.use_step else 'final_model_checkpoint_step.pth')
-            
-            print('Validation on the best model.')
-            print('Loading model from %s' % (model_dir))
-            
-            checkpoint = torch.load(model_dir)          
-            model_state = checkpoint['state_dict_best']
-            
-            self.centers = checkpoint['centers'] if 'centers' in checkpoint else None
-            
-        else:
-            
-            model_dir = os.path.join(self.training_opt['log_dir'], 
-                                     ('epoch_%s_checkpoint.pth' % epoch) \
-                                     if not self.use_step else ('epoch_%s_checkpoint_step.pth' % epoch))
-            
-            print('Validation on the model of epoch %d' % epoch)            
-            print('Loading model from %s' % (model_dir))
-            
-            checkpoint = torch.load(model_dir)            
-            model_state = checkpoint['state_dict']
-            
-            self.centers = checkpoint['centers'] if 'centers' in checkpoint else None
+        model_dir = os.path.join(self.training_opt['log_dir'], 
+                                 'final_model_checkpoint.pth')
+        
+        print('Validation on the best model.')
+        print('Loading model from %s' % (model_dir))
+        
+        checkpoint = torch.load(model_dir)          
+        model_state = checkpoint['state_dict_best']
+        
+        self.centers = checkpoint['centers'] if 'centers' in checkpoint else None
         
         for key, model in self.networks.items():
 
@@ -401,29 +383,24 @@ class model ():
             # model.load_state_dict(model_state[key])
             model.load_state_dict(weights)
         
-    
-    def save_model(self, epoch, best_epoch=None, best_model_weights=None, best_acc=None, centers=None):
-        
-        #pdb.set_trace()
+    def save_model(self, epoch, best_epoch, best_model_weights, best_acc, centers=None):
         
         model_states = {'epoch': epoch,
                 'best_epoch': best_epoch,
                 'state_dict_best': best_model_weights,
-                'state_dict': {'feat_model': self.networks['feat_model'].state_dict(),
-                               'classifier': self.networks['classifier'].state_dict()},
                 'best_acc': best_acc,
-                'model_optimizer': self.model_optimizer.state_dict(),
-                'criterion_optimizer': self.criterion_optimizer.state_dict() if self.criterion_optimizer else None,
                 'centers': centers}
 
-        if best_epoch:
-            model_dir = os.path.join(self.training_opt['log_dir'], 
-                                     'final_model_checkpoint.pth' \
-                                     if not self.use_step else 'final_model_checkpoint_step.pth')
-            torch.save(model_states, model_dir)
-        else:
-            model_dir = os.path.join(self.training_opt['log_dir'], 
-                                     ('epoch_%s_checkpoint.pth' % epoch) \
-                                     if not self.use_step else ('epoch_%s_checkpoint_step.pth' % epoch))
-            torch.save(model_states, model_dir)
+        model_dir = os.path.join(self.training_opt['log_dir'], 
+                                 'final_model_checkpoint.pth')
+
+        torch.save(model_states, model_dir)
             
+    def output_logits(self, openset=False):
+        filename = os.path.join(self.training_opt['log_dir'], 
+                                'logits_%s'%('open' if openset else 'close'))
+        print("Saving total logits to: %s.npz" % filename)
+        np.savez(filename, 
+                 logits=self.total_logits.detach().cpu().numpy(), 
+                 labels=self.total_labels.detach().cpu().numpy(),
+                 paths=self.total_paths)

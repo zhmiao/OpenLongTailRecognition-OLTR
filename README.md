@@ -9,15 +9,15 @@ python main.py --config ./config/Places_LT/stage_1_test.py
 ```
 - Stage 2 training:
 ```
-python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py --use_step True
+python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py True
 ```
 - Close-set testing:
 ```
-python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py --use_step True --test True
+python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py --test True
 ```
 - Open-set testing (thresholding)
 ```
-python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py --use_step True --test True --test_open True
+python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py --test True --test_open True
 ```
 
 

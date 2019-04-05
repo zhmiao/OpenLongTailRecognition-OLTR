@@ -248,11 +248,10 @@ class model ():
         print()
         print('Training Complete.')
 
-        if save_best:
-            print_str = ['Best validation accuracy is %.3f at epoch %d' % (best_acc, best_epoch)]
-            print_write(print_str, self.log_file)
-            # Save the best model and best centers if calculated
-            self.save_model(epoch, best_epoch, best_model_weights, best_acc, centers=best_centers)
+        print_str = ['Best validation accuracy is %.3f at epoch %d' % (best_acc, best_epoch)]
+        print_write(print_str, self.log_file)
+        # Save the best model and best centers if calculated
+        self.save_model(epoch, best_epoch, best_model_weights, best_acc, centers=best_centers)
                 
         print('Done')
 

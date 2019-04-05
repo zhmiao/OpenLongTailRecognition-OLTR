@@ -16,7 +16,8 @@ Further information please contact [Zhongqi Miao](zhongqi.miao@berkeley.edu) and
 * [PyTorch](https://pytorch.org/)
 
 ## Data Preparation
-First, please change the `data_root` to your own directories of full ImageNet_2014 and Places_365.
+First, please download the [ImageNet_2014](http://image-net.org/index) and [Places_365](http://places2.csail.mit.edu/download.html) (256x256 version).
+Please also change the `data_root` accordingly.
 
 Next, please download ImageNet-LT and Places-LT from [here](https://drive.google.com/drive/u/1/folders/1j7Nkfe6ZhzKFXePHdsseeeGI877Xu1yf). Please put the downloaded files into the `data` directory like this:
 ```
@@ -42,7 +43,7 @@ data
 
 <img src='./assets/pipeline.jpg' width=800>
 
-### Places-LT (*Now only for testing*)
+* Places (*Now only for testing*)
 - Stage 1 training:
 ```
 python main.py --config ./config/Places_LT/stage_1_test.py

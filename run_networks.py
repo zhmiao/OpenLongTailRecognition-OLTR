@@ -240,7 +240,7 @@ class model ():
             # Under validation, the best model need to be updated
             if self.eval_acc_mic_top1 > best_acc:
                 best_epoch = epoch
-                best_acc = self.eval_acc_mic
+                best_acc = self.eval_acc_mic_top1
                 best_centers = self.centers
                 best_model_weights['feat_model'] = copy.deepcopy(self.networks['feat_model'].state_dict())
                 best_model_weights['classifier'] = copy.deepcopy(self.networks['classifier'].state_dict())

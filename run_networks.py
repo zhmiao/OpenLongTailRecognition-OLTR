@@ -128,8 +128,8 @@ class model ():
 
             # During training, calculate centers if needed to 
             if phase != 'test':
-                if centers and 'FeatureLoss' in self.criterion.keys():
-                    self.centers = self.criterion['FeatureLoss'].centers.data
+                if centers and 'FeatureLoss' in self.criterions.keys():
+                    self.centers = self.criterions['FeatureLoss'].centers.data
                 else:
                     self.centers = None
 
@@ -151,15 +151,15 @@ class model ():
     def batch_loss(self, labels):
 
         # First, apply performance loss
-        self.loss_perf = self.criterion['PerformanceLoss'](self.logits, labels) \
+        self.loss_perf = self.criterions['PerformanceLoss'](self.logits, labels) \
                     * self.criterion_weights['PerformanceLoss']
 
         # Add performance loss to total loss
         self.loss = self.loss_perf
 
         # Apply loss on features if set up
-        if 'FeatureLoss' in self.criterion.keys():
-            self.loss_feat = self.criterion['FeatureLoss'](self.features, labels)
+        if 'FeatureLoss' in self.criterions.keys():
+            self.loss_feat = self.criterions['FeatureLoss'](self.features, labels)
             self.loss_feat = self.loss_feat * self.criterion_weights['FeatureLoss']
             # Add feature loss to total loss
             self.loss += self.loss_feat
@@ -178,9 +178,6 @@ class model ():
         best_acc = 0.0
         best_epoch = 0
 
-        # Initialize training step
-        # training_step = 1
-        # Ending epoch is training epoch
         end_epoch = self.training_opt['num_epochs']
 
         for model in self.networks.values():
@@ -220,14 +217,15 @@ class model ():
                     if step % self.training_opt['display_step'] == 0:
 
                         minibatch_loss_feat = self.loss_feat.item() \
-                            if 'FeatureLoss' in self.criterion.keys() else None
+                            if 'FeatureLoss' in self.criterions.keys() else None
                         minibatch_loss_perf = self.loss_perf.item()
-                        minibatch_acc = mic_acc_cal(self.logits, labels)
+                        _, preds = torch.max(self.logits, 1)
+                        minibatch_acc = mic_acc_cal(preds, labels)
 
                         print_str = ['Epoch: [%d/%d]' 
                                      % (epoch, self.training_opt['num_epochs']),
                                      'Step: %5d' 
-                                     % (training_step),
+                                     % (step),
                                      'Minibatch_loss_feature: %.3f' 
                                      % (minibatch_loss_feat) if minibatch_loss_feat else '',
                                      'Minibatch_loss_performance: %.3f' 
@@ -240,7 +238,7 @@ class model ():
             self.eval(phase='val')
 
             # Under validation, the best model need to be updated
-            if self.eval_acc_mic > best_acc:
+            if self.eval_acc_mic_top1 > best_acc:
                 best_epoch = epoch
                 best_acc = self.eval_acc_mic
                 best_centers = self.centers

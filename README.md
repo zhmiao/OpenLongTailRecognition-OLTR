@@ -5,7 +5,7 @@
 ## Overview
 `Open Long-Tailed Recognition (OLTR)` is the author's re-implementation of the long-tail recognizer described in:  
 "Large-Scale Long-Tailed Recognition in an Open World"   
-[Ziwei Liu](https://liuziwei7.github.io/)<sup>\*</sup>, [Zhongqi Miao](https://github.com/zhmiao)<sup>\*</sup>, [Xiaohang Zhan](https://xiaohangzhan.github.io/), [Jiayun Wang](http://pwang.pw/), [Boqing Gong](http://boqinggong.info/), [Stella X. Yu](https://www1.icsi.berkeley.edu/~stellayu/) (CUHK & UC Berkeley / ICSI & Google)
+[Ziwei Liu](https://liuziwei7.github.io/)<sup>\*</sup>, [Zhongqi Miao](https://github.com/zhmiao)<sup>\*</sup>, [Xiaohang Zhan](https://xiaohangzhan.github.io/), [Jiayun Wang](http://pwang.pw/), [Boqing Gong](http://boqinggong.info/), [Stella X. Yu](https://www1.icsi.berkeley.edu/~stellayu/) (CUHK & UC Berkeley / ICSI)
 in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2019, **Oral Presentation**
 
 <img src='./assets/intro.png' width=800>
@@ -13,13 +13,14 @@ in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2019, **Ora
 Further information please contact [Zhongqi Miao](zhongqi.miao@berkeley.edu) and [Ziwei Liu](https://liuziwei7.github.io/).
 
 ## Requirements
-* [PyTorch](https://pytorch.org/)
+* [PyTorch](https://pytorch.org/) (version >= 0.4.1)
+* [scikit-learn](https://scikit-learn.org/stable/)
 
 ## Data Preparation
-First, please download the [ImageNet_2014](http://image-net.org/index) and [Places_365](http://places2.csail.mit.edu/download.html) (256x256 version).
+- First, please download the [ImageNet_2014](http://image-net.org/index) and [Places_365](http://places2.csail.mit.edu/download.html) (256x256 version).
 Please also change the `data_root` in `main.py` accordingly.
 
-Next, please download ImageNet-LT and Places-LT from [here](https://drive.google.com/drive/u/1/folders/1j7Nkfe6ZhzKFXePHdsseeeGI877Xu1yf). Please put the downloaded files into the `data` directory like this:
+- Next, please download ImageNet-LT and Places-LT from [here](https://drive.google.com/drive/u/1/folders/1j7Nkfe6ZhzKFXePHdsseeeGI877Xu1yf). Please put the downloaded files into the `data` directory like this:
 ```
 data
   |--ImageNet_LT
@@ -43,7 +44,9 @@ data
 
 <img src='./assets/pipeline.jpg' width=800>
 
-* Places (*Now only for testing*)
+### ImageNet-LT
+
+### Places-LT
 - Stage 1 training:
 ```
 python main.py --config ./config/Places_LT/stage_1_test.py

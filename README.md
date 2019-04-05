@@ -24,7 +24,7 @@ Further information please contact [Zhongqi Miao](zhongqi.miao@berkeley.edu) and
 
 <img src='./assets/pipeline.jpg' width=800>
 
-* Places (*Now only for testing*)
+### Places-LT (*Now only for testing*)
 - Stage 1 training:
 ```
 python main.py --config ./config/Places_LT/stage_1_test.py

@@ -17,7 +17,7 @@ Further information please contact [Zhongqi Miao](zhongqi.miao@berkeley.edu) and
 
 ## Data Preparation
 First, please download the [ImageNet_2014](http://image-net.org/index) and [Places_365](http://places2.csail.mit.edu/download.html) (256x256 version).
-Please also change the `data_root` accordingly.
+Please also change the `data_root` in `main.py` accordingly.
 
 Next, please download ImageNet-LT and Places-LT from [here](https://drive.google.com/drive/u/1/folders/1j7Nkfe6ZhzKFXePHdsseeeGI877Xu1yf). Please put the downloaded files into the `data` directory like this:
 ```

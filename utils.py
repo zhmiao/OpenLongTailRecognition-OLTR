@@ -99,6 +99,13 @@ def mic_acc_cal(preds, labels):
     acc_mic_top1 = (preds == labels).sum().item() / len(labels)
     return acc_mic_top1
 
+def class_count (data):
+    labels = np.array(data.dataset.labels)
+    class_data_num = []
+    for l in np.unique(labels):
+        class_data_num.append(len(labels[labels == l]))  
+    return class_data_num
+
 # def dataset_dist (in_loader):
 
 #     """Example, dataset_dist(data['train'][0])"""
@@ -112,10 +119,3 @@ def mic_acc_cal(preds, labels):
         
 #     return distribution
 
-# def class_num_count (train_data):
-#     input_samples = np.array(train_data.dataset.samples)
-#     labels = input_samples[:, 1].astype(int)
-#     class_data_num = []
-#     for l in np.unique(labels):
-#         class_data_num.append(len(labels[labels == l]))  
-#     return class_data_num

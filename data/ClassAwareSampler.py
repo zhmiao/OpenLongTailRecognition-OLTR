@@ -1,4 +1,5 @@
 import random
+import numpy as np
 from torch.utils.data.sampler import Sampler
 import pdb
 
@@ -50,11 +51,10 @@ def class_aware_sample_generator (cls_iter, data_iter_list, n, num_samples_cls=1
 class ClassAwareSampler (Sampler):
     
     def __init__(self, data_source, num_samples_cls=1,):
-        self.data_source = data_source
-        num_classes = len(data_source.classes)
+        num_classes = len(np.unique(data_source.labels))
         self.class_iter = RandomCycleIter(range(num_classes))
         cls_data_list = [list() for _ in range(num_classes)]
-        for i, (_, label) in enumerate(data_source.imgs):
+        for i, label in enumerate(data_source.labels):
             cls_data_list[label].append(i)
         self.data_iter_list = [RandomCycleIter(x) for x in cls_data_list]
         self.num_samples = max([len(x) for x in cls_data_list]) * len(cls_data_list)

@@ -50,9 +50,8 @@ def init_weights(model, weights_path, caffe=False, classifier=False):
     return model
 
 def shot_acc (preds, labels, train_data, many_shot_thr=100, low_shot_thr=20):
-
-    training_samples = np.array(train_data.dataset.samples)
-    training_labels = training_samples[:, 1].astype(int)
+    
+    training_labels = np.array(train_data.dataset.labels).astype(int)
 
     preds = preds.detach().cpu().numpy()
     labels = labels.detach().cpu().numpy()

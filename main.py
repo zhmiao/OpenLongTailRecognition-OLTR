@@ -9,9 +9,8 @@ from utils import source_import
 # ================
 # LOAD CONFIGURATIONS
 
-root = '/home/public/dataset'
-data_root = {'ImageNet_LT': os.path.join(root, 'imagenet_LT/'),
-             'Places_LT': os.path.join(root, 'Places365_LT/')}
+data_root = {'ImageNet': '/home/public/public_dataset/ILSVRC2014/Img',
+             'Places': '/home/zhmiao/datasets/Places365'}
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='./config/Imagenet_LT/Stage_1.py', type=str)
@@ -32,7 +31,7 @@ dataset = training_opt['dataset']
 if not os.path.isdir(training_opt['log_dir']):
     os.makedirs(training_opt['log_dir'])
 
-print('Loading dataset from: %s' % data_root[dataset])
+print('Loading dataset from: %s' % data_root[dataset.rstrip('_LT')])
 pprint.pprint(config)
 
 if not test_mode:
@@ -44,9 +43,10 @@ if not test_mode:
     else:
         sampler_dic = None
 
-    data = {x: dataloader.load_data(data_root=data_root[dataset], dataset=x, 
+    data = {x: dataloader.load_data(data_root=data_root[dataset.rstrip('_LT')], dataset=dataset, phase=x, 
                                     batch_size=training_opt['batch_size'],
-                                    sampler_dic=sampler_dic, num_workers=training_opt['num_workers'])
+                                    sampler_dic=sampler_dic,
+                                    num_workers=training_opt['num_workers'])
             for x in (['train', 'val', 'train_plain'] if relatin_opt['init_centers'] else ['train', 'val'])}
 
     training_model = model(config, data, test=False)
@@ -59,12 +59,12 @@ else:
 
     print('Under testing phase, we load training data simply to calculate training data number for each class.')
 
-    data = {x: dataloader.load_data(data_root=data_root[dataset], dataset=x,
+    data = {x: dataloader.load_data(data_root=data_root[dataset.rstrip('_LT')], dataset=dataset, phase=x,
                                     batch_size=training_opt['batch_size'],
                                     sampler_dic=None, 
                                     test_open=test_open,
                                     num_workers=training_opt['num_workers'],
-                                    shuffle=not output_logits)
+                                    shuffle=False)
             for x in ['train', 'test']}
 
     

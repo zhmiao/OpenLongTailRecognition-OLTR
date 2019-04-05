@@ -32,7 +32,7 @@ class model ():
             # for each epoch based on actual number of training data instead of 
             # oversampled data number 
             print('Using steps for training.')
-            self.training_data_num = self.data['train'][1]
+            self.training_data_num = len(self.data['train'].dataset)
             self.epoch_steps = int(self.training_data_num  \
                                    / self.training_opt['batch_size'])
 
@@ -44,7 +44,7 @@ class model ():
             self.init_criterions()
             if self.relations['init_centers']:
                 self.criterions['FeatureLoss'].centers.data = \
-                    self.centers_cal(self.data['train_plain'][0])
+                    self.centers_cal(self.data['train_plain'])
             
         # Set up log file
         self.log_file = os.path.join(self.training_opt['log_dir'], 'log.txt')
@@ -198,7 +198,7 @@ class model ():
                 self.criterion_optimizer_scheduler.step()
 
             # Iterate over dataset
-            for step, (inputs, labels, _) in enumerate(self.data['train'][0]):
+            for step, (inputs, labels, _) in enumerate(self.data['train']):
 
                 # Break when step equal to epoch step
                 if step == self.epoch_steps:
@@ -279,7 +279,7 @@ class model ():
         self.total_paths = np.empty(0)
 
         # Iterate over dataset
-        for inputs, labels, paths in tqdm(self.data[phase][0]):
+        for inputs, labels, paths in tqdm(self.data[phase]):
             inputs, labels = inputs.to(self.device), labels.to(self.device)
 
             # If on training phase, enable gradients
@@ -292,7 +292,6 @@ class model ():
                 self.total_logits = torch.cat((self.total_logits, self.logits))
                 self.total_labels = torch.cat((self.total_labels, labels))
                 self.total_paths = np.concatenate((self.total_paths, paths))
-
 
         probs, preds = F.softmax(self.total_logits.detach(), dim=1).max(dim=1)
 
@@ -311,7 +310,7 @@ class model ():
         self.median_acc_top1, \
         self.low_acc_top1 = shot_acc(preds[self.total_labels != -1],
                                      self.total_labels[self.total_labels != -1], 
-                                     self.data['train'][0])
+                                     self.data['train'])
         # Top-1 accuracy and additional string
         print_str = ['\n\n',
                      'Phase: %s' 

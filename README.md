@@ -16,6 +16,24 @@ Further information please contact [Zhongqi Miao](zhongqi.miao@berkeley.edu) and
 * [PyTorch](https://pytorch.org/)
 
 ## Data Preparation
+First, please change the `data_root` to your own directories of full ImageNet_2014 and Places_365.
+
+Next, please download ImageNet-LT and Places-LT from [here](https://drive.google.com/drive/u/1/folders/1j7Nkfe6ZhzKFXePHdsseeeGI877Xu1yf). Please put the downloaded files into the `data` directory like this:
+```
+data
+  |--ImageNet_LT
+    |--ImageNet_LT_open
+    |--ImageNet_LT_train.txt
+    |--ImageNet_LT_test.txt
+    |--ImageNet_LT_val.txt
+    |--ImageNet_LT_open.txt
+  |--Places_LT
+    |--Places_LT_open
+    |--Places_LT_train.txt
+    |--Places_LT_test.txt
+    |--Places_LT_val.txt
+    |--Places_LT_open.txt
+```
 
 ## Download Pre-trained Models
 * Caffe pretrained ResNet152 weights can be downloaded from [here](https://drive.google.com/uc?export=download&id=0B7fNdx_jAqhtckNGQ2FLd25fa3c), and save the file to `.logs/caffe_resnet152.pth`
@@ -31,7 +49,7 @@ python main.py --config ./config/Places_LT/stage_1_test.py
 ```
 - Stage 2 training:
 ```
-python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py True
+python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py
 ```
 - Close-set testing:
 ```

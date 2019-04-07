@@ -45,23 +45,43 @@ data
 <img src='./assets/pipeline.jpg' width=800>
 
 ### ImageNet-LT
+- Stage 1 training:
+```
+python main.py --config ./config/ImageNet_LT/stage_1.py
+```
+- Stage 2 training:
+```
+python main.py --config ./config/ImageNet_LT/stage_2_meta_embedding.py
+```
+- Close-set testing:
+```
+python main.py --config ./config/ImageNet_LT/stage_2_meta_embedding.py --test
+```
+- Open-set testing (thresholding)
+```
+python main.py --config ./config/ImageNet_LT/stage_2_meta_embedding.py --test_open
+```
+- Test on stage 1 model
+```
+python main.py --config ./config/ImageNet_LT/stage_1.py --test
+```
 
 ### Places-LT
 - Stage 1 training:
 ```
-python main.py --config ./config/Places_LT/stage_1_test.py
+python main.py --config ./config/Places_LT/stage_1.py
 ```
 - Stage 2 training:
 ```
-python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py
+python main.py --config ./config/Places_LT/stage_2_meta_embedding.py
 ```
 - Close-set testing:
 ```
-python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py --test True
+python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test
 ```
 - Open-set testing (thresholding)
 ```
-python main.py --config ./config/Places_LT/stage_2_meta_embedding_test.py --test True --test_open True
+python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test_open
 ```
 
 ## License and Citation

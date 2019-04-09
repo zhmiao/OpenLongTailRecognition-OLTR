@@ -5,10 +5,10 @@ from utils import *
 
 import pdb
 
-class Relation_Classifier(nn.Module):
+class MetaEmbedding_Classifier(nn.Module):
     
     def __init__(self, feat_dim=2048, num_classes=1000):
-        super(Relation_Classifier, self).__init__()
+        super(MetaEmbedding_Classifier, self).__init__()
         self.num_classes = num_classes
         self.fc_channel = nn.Linear(feat_dim, feat_dim)
         self.fc_classifier_stage1 = nn.Linear(feat_dim, num_classes)
@@ -46,8 +46,8 @@ class Relation_Classifier(nn.Module):
         return logits, [slow_feature, fast_feature]
     
 def create_model(feat_dim=2048, num_classes=1000, stage1_weights=False, dataset=None, test=False, *args):
-    print('Loading Relation Classifier.')
-    clf = Relation_Classifier(feat_dim, num_classes)
+    print('Loading Meta Embedding Classifier.')
+    clf = MetaEmbedding_Classifier(feat_dim, num_classes)
 
     if not test:
         if stage1_weights:

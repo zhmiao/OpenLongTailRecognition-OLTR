@@ -17,7 +17,7 @@ training_opt['scheduler_params'] = {'step_size':10, 'gamma':0.1}
 config['training_opt'] = training_opt
 
 networks = {}
-feature_param = {'use_selfatt': True, 'use_fc': True, 'dropout': None, 
+feature_param = {'use_modulatedatt': True, 'use_fc': True, 'dropout': None, 
 			     'stage1_weights': True, 'dataset': training_opt['dataset']}
 feature_optim_param = {'lr': 0.01, 'momentum':0.9, 'weight_decay':0.0005}
 networks['feat_model'] = {'def_file': './models/ResNet10Feature.py',
@@ -27,7 +27,7 @@ networks['feat_model'] = {'def_file': './models/ResNet10Feature.py',
 classifier_param = {'in_dim': training_opt['feature_dim'], 'num_classes': training_opt['num_classes'], 
 				    'stage1_weights': True, 'dataset': training_opt['dataset']}
 classifier_optim_param = {'lr': 0.1, 'momentum':0.9, 'weight_decay':0.0005}
-networks['classifier'] = {'def_file': './models/RelationClassifier.py',
+networks['classifier'] = {'def_file': './models/MetaEmbeddingClassifier.py',
                           'params': classifier_param,
                           'optim_params': classifier_optim_param}
 config['networks'] = networks
@@ -38,7 +38,7 @@ criterions['PerformanceLoss'] = {'def_file': './loss/SoftmaxLoss.py', 'loss_para
                                  'optim_params': None, 'weight': 1.0}
 feat_loss_param = {'feat_dim': training_opt['feature_dim'], 'num_classes': training_opt['num_classes']}
 feat_loss_optim_param = {'lr': 0.01, 'momentum':0.9, 'weight_decay':0.0005}
-criterions['FeatureLoss'] = {'def_file': './loss/CenterLoss_ours.py', 'loss_params': feat_loss_param,
+criterions['FeatureLoss'] = {'def_file': './loss/DiscCentroidsLoss.py', 'loss_params': feat_loss_param,
                              'optim_params': feat_loss_optim_param, 'weight': 0.01}
 config['criterions'] = criterions
 
@@ -46,4 +46,3 @@ relations = {}
 relations['centers'] = True
 relations['init_centers'] = True
 config['relations'] = relations
-

@@ -1,7 +1,7 @@
 import math
 import torch.nn as nn
 import torch.nn.functional as F
-from layers.SelfAttLayer import SelfAttLayer
+from layers.ModulatedAttLayer import ModulatedAttLayer
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
@@ -79,7 +79,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, use_selfatt=False, use_fc=False, dropout=None):
+    def __init__(self, block, layers, use_modulatedatt=False, use_fc=False, dropout=None):
         self.inplanes = 64
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
@@ -104,10 +104,10 @@ class ResNet(nn.Module):
             print('Using dropout.')
             self.dropout = nn.Dropout(p=dropout)
   
-        self.use_selfatt = use_selfatt
-        if self.use_selfatt:
+        self.use_modulatedatt = use_modulatedatt
+        if self.use_modulatedatt:
             print('Using self attention.')
-            self.selfatt = SelfAttLayer(in_channels=512*block.expansion)
+            self.modulatedatt = ModulatedAttLayer(in_channels=512*block.expansion)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -145,8 +145,8 @@ class ResNet(nn.Module):
         x = self.layer3(x)
         x = self.layer4(x)
 
-        if self.use_selfatt:
-            x, feature_maps = self.selfatt(x)
+        if self.use_modulatedatt:
+            x, feature_maps = self.modulatedatt(x)
         else:
             feature_maps = None
 

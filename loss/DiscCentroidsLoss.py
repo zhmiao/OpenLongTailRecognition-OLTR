@@ -1,19 +1,17 @@
 import torch
 import torch.nn as nn
 from torch.autograd.function import Function
-from loss.LiftedStructuredLoss import LiftedStructuredLoss
 
 import pdb
 
-class CenterLoss(nn.Module):
+class DiscCentroidsLoss(nn.Module):
     def __init__(self, num_classes, feat_dim, size_average=True):
-        super(CenterLoss, self).__init__()
+        super(DiscCentroidsLoss, self).__init__()
         self.num_classes = num_classes
-        self.centers = nn.Parameter(torch.randn(num_classes, feat_dim))
-        self.centerlossfunc = CenterlossFunc.apply
+        self.centroids = nn.Parameter(torch.randn(num_classes, feat_dim))
+        self.disccentroidslossfunc = DiscCentroidsLossFunc.apply
         self.feat_dim = feat_dim
         self.size_average = size_average
-        self.lifted_loss = LiftedStructuredLoss(margin=5.0)
 
     def forward(self, feat, label):
         batch_size = feat.size(0)
@@ -21,18 +19,18 @@ class CenterLoss(nn.Module):
         # calculate attracting loss
 
         feat = feat.view(batch_size, -1)
-        # To check the dim of centers and features
+        # To check the dim of centroids and features
         if feat.size(1) != self.feat_dim:
             raise ValueError("Center's dim: {0} should be equal to input feature's \
                             dim: {1}".format(self.feat_dim,feat.size(1)))
         batch_size_tensor = feat.new_empty(1).fill_(batch_size if self.size_average else 1)
-        loss_attract = self.centerlossfunc(feat, label, self.centers, batch_size_tensor).squeeze()
+        loss_attract = self.disccentroidslossfunc(feat, label, self.centroids, batch_size_tensor).squeeze()
         
         # calculate repelling loss
 
         distmat = torch.pow(feat, 2).sum(dim=1, keepdim=True).expand(batch_size, self.num_classes) + \
-                  torch.pow(self.centers, 2).sum(dim=1, keepdim=True).expand(self.num_classes, batch_size).t()
-        distmat.addmm_(1, -2, feat, self.centers.t())
+                  torch.pow(self.centroids, 2).sum(dim=1, keepdim=True).expand(self.num_classes, batch_size).t()
+        distmat.addmm_(1, -2, feat, self.centroids.t())
 
         classes = torch.arange(self.num_classes).long().cuda()
         labels_expand = label.unsqueeze(1).expand(batch_size, self.num_classes)
@@ -50,30 +48,30 @@ class CenterLoss(nn.Module):
         return loss
 
 
-class CenterlossFunc(Function):
+class DiscCentroidsLossFunc(Function):
     @staticmethod
-    def forward(ctx, feature, label, centers, batch_size):
-        ctx.save_for_backward(feature, label, centers, batch_size)
-        centers_batch = centers.index_select(0, label.long())
-        return (feature - centers_batch).pow(2).sum() / 2.0 / batch_size
+    def forward(ctx, feature, label, centroids, batch_size):
+        ctx.save_for_backward(feature, label, centroids, batch_size)
+        centroids_batch = centroids.index_select(0, label.long())
+        return (feature - centroids_batch).pow(2).sum() / 2.0 / batch_size
 
     @staticmethod
     def backward(ctx, grad_output):
-        feature, label, centers, batch_size = ctx.saved_tensors
-        centers_batch = centers.index_select(0, label.long())
-        diff = centers_batch - feature
+        feature, label, centroids, batch_size = ctx.saved_tensors
+        centroids_batch = centroids.index_select(0, label.long())
+        diff = centroids_batch - feature
         # init every iteration
-        counts = centers.new_ones(centers.size(0))
-        ones = centers.new_ones(label.size(0))
-        grad_centers = centers.new_zeros(centers.size())
+        counts = centroids.new_ones(centroids.size(0))
+        ones = centroids.new_ones(label.size(0))
+        grad_centroids = centroids.new_zeros(centroids.size())
 
         counts = counts.scatter_add_(0, label.long(), ones)
-        grad_centers.scatter_add_(0, label.unsqueeze(1).expand(feature.size()).long(), diff)
-        grad_centers = grad_centers/counts.view(-1, 1)
-        return - grad_output * diff / batch_size, None, grad_centers / batch_size, None
+        grad_centroids.scatter_add_(0, label.unsqueeze(1).expand(feature.size()).long(), diff)
+        grad_centroids = grad_centroids/counts.view(-1, 1)
+        return - grad_output * diff / batch_size, None, grad_centroids / batch_size, None
 
 
     
 def create_loss (feat_dim=512, num_classes=1000):
-    print('Loading Center Loss (ours).')
-    return CenterLoss(num_classes, feat_dim)
+    print('Loading Discriminative Centroids Loss.')
+    return DiscCentroidsLoss(num_classes, feat_dim)

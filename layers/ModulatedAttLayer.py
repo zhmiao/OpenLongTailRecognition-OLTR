@@ -8,10 +8,10 @@ from torch.nn import functional as F
 import pdb
 
 # TODO: implement dot_product and other non-local formats
-class SelfAttLayer(nn.Module):
+class ModulatedAttLayer(nn.Module):
 
     def __init__(self, in_channels, reduction = 2, mode='embedded_gaussian'):
-        super(SelfAttLayer, self).__init__()
+        super(ModulatedAttLayer, self).__init__()
         self.in_channels = in_channels
         self.reduction = reduction
         self.inter_channels = in_channels // reduction

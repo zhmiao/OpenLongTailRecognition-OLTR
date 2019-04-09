@@ -134,7 +134,7 @@ class model ():
                     self.centroids = None
 
             # Calculate logits with classifier
-            self.logits, self.slow_fast_feature = self.networks['classifier'](self.features, self.centroids)
+            self.logits, self.direct_memory_feature = self.networks['classifier'](self.features, self.centroids)
 
     def batch_backward(self):
         # Zero out optimizer gradients

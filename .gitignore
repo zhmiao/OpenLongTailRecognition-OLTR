@@ -2,5 +2,5 @@
 .*
 *logs*
 *__*
-ImageNet_LT
-Places_LT
+./data/ImageNet_LT
+./data/Places_LT

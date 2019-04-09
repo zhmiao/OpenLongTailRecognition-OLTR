@@ -1,11 +1,11 @@
 # Large-Scale Long-Tailed Recognition in an Open World
 
-[[Project]](https://liuziwei7.github.io/projects/LongTail.html) [[Paper]]() [[Demo]]()      
+[[Project]](https://liuziwei7.github.io/projects/LongTail.html) [[Paper]]()   
 
 ## Overview
 `Open Long-Tailed Recognition (OLTR)` is the author's re-implementation of the long-tail recognizer described in:  
 "Large-Scale Long-Tailed Recognition in an Open World"   
-[Ziwei Liu](https://liuziwei7.github.io/)<sup>\*</sup>, [Zhongqi Miao](https://github.com/zhmiao)<sup>\*</sup>, [Xiaohang Zhan](https://xiaohangzhan.github.io/), [Jiayun Wang](http://pwang.pw/), [Boqing Gong](http://boqinggong.info/), [Stella X. Yu](https://www1.icsi.berkeley.edu/~stellayu/) (CUHK & UC Berkeley / ICSI)
+[Ziwei Liu](https://liuziwei7.github.io/)<sup>\*</sup>,&nbsp;&nbsp;[Zhongqi Miao](https://github.com/zhmiao)<sup>\*</sup>,&nbsp;&nbsp;[Xiaohang Zhan](https://xiaohangzhan.github.io/),&nbsp;&nbsp;[Jiayun Wang](http://pwang.pw/),&nbsp;&nbsp;[Boqing Gong](http://boqinggong.info/),&nbsp;&nbsp;[Stella X. Yu](https://www1.icsi.berkeley.edu/~stellayu/)&nbsp;&nbsp;(CUHK & UC Berkeley / ICSI)
 in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2019, **Oral Presentation**
 
 <img src='./assets/intro.png' width=800>
@@ -17,6 +17,9 @@ Further information please contact [Zhongqi Miao](zhongqi.miao@berkeley.edu) and
 * [scikit-learn](https://scikit-learn.org/stable/)
 
 ## Data Preparation
+
+<img src='./assets/dataset.png' width=800>
+
 - First, please download the [ImageNet_2014](http://image-net.org/index) and [Places_365](http://places2.csail.mit.edu/download.html) (256x256 version).
 Please also change the `data_root` in `main.py` accordingly.
 
@@ -42,7 +45,7 @@ data
 
 ## Getting Started (Training & Testing)
 
-<img src='./assets/pipeline.jpg' width=800>
+<img src='./assets/pipeline.png' width=800>
 
 ### ImageNet-LT
 - Stage 1 training:

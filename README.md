@@ -5,7 +5,7 @@
 ## Overview
 `Open Long-Tailed Recognition (OLTR)` is the author's re-implementation of the long-tail recognizer described in:  
 "Large-Scale Long-Tailed Recognition in an Open World"   
-[Ziwei Liu](https://liuziwei7.github.io/)<sup>\*</sup>,&nbsp; [Zhongqi Miao](https://github.com/zhmiao)<sup>\*</sup>,&nbsp; [Xiaohang Zhan](https://xiaohangzhan.github.io/),&nbsp; [Jiayun Wang](http://pwang.pw/),&nbsp; [Boqing Gong](http://boqinggong.info/),&nbsp; [Stella X. Yu](https://www1.icsi.berkeley.edu/~stellayu/)&nbsp; (CUHK & UC Berkeley / ICSI)
+[Ziwei Liu](https://liuziwei7.github.io/)<sup>\*</sup>,&nbsp; &nbsp; [Zhongqi Miao](https://github.com/zhmiao)<sup>\*</sup>,&nbsp; &nbsp; [Xiaohang Zhan](https://xiaohangzhan.github.io/),&nbsp; &nbsp; [Jiayun Wang](http://pwang.pw/),&nbsp; &nbsp; [Boqing Gong](http://boqinggong.info/),&nbsp; &nbsp; [Stella X. Yu](https://www1.icsi.berkeley.edu/~stellayu/)&nbsp; &nbsp; (CUHK & UC Berkeley / ICSI)&nbsp; &nbsp; 
 in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2019, **Oral Presentation**
 
 <img src='./assets/intro.png' width=800>

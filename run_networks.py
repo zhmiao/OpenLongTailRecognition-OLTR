@@ -18,14 +18,14 @@ class model ():
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.config = config
         self.training_opt = self.config['training_opt']
-        self.relations = self.config['relations']
+        self.memory = self.config['memory']
         self.data = data
         self.test_mode = test
         
         # Initialize model
         self.init_models()
 
-        # Under training mode, initialize training steps, optimizers, schedulers, criterions, and centers
+        # Under training mode, initialize training steps, optimizers, schedulers, criterions, and centroids
         if not self.test_mode:
 
             # If using steps for training, we need to calculate training steps 
@@ -42,9 +42,9 @@ class model ():
             self.model_optimizer, \
             self.model_optimizer_scheduler = self.init_optimizers(self.model_optim_params_list)
             self.init_criterions()
-            if self.relations['init_centers']:
-                self.criterions['FeatureLoss'].centers.data = \
-                    self.centers_cal(self.data['train_plain'])
+            if self.memory['init_centroids']:
+                self.criterions['FeatureLoss'].centroids.data = \
+                    self.centroids_cal(self.data['train_plain'])
             
         # Set up log file
         self.log_file = os.path.join(self.training_opt['log_dir'], 'log.txt')
@@ -115,7 +115,7 @@ class model ():
                                               gamma=self.scheduler_params['gamma'])
         return optimizer, scheduler
 
-    def batch_forward (self, inputs, labels=None, centers=False, feature_ext=False, phase='train'):
+    def batch_forward (self, inputs, labels=None, centroids=False, feature_ext=False, phase='train'):
         '''
         This is a general single batch running function. 
         '''
@@ -126,15 +126,15 @@ class model ():
         # If not just extracting features, calculate logits
         if not feature_ext:
 
-            # During training, calculate centers if needed to 
+            # During training, calculate centroids if needed to 
             if phase != 'test':
-                if centers and 'FeatureLoss' in self.criterions.keys():
-                    self.centers = self.criterions['FeatureLoss'].centers.data
+                if centroids and 'FeatureLoss' in self.criterions.keys():
+                    self.centroids = self.criterions['FeatureLoss'].centroids.data
                 else:
-                    self.centers = None
+                    self.centroids = None
 
             # Calculate logits with classifier
-            self.logits, self.slow_fast_feature = self.networks['classifier'](self.features, self.centers)
+            self.logits, self.slow_fast_feature = self.networks['classifier'](self.features, self.centroids)
 
     def batch_backward(self):
         # Zero out optimizer gradients
@@ -208,7 +208,7 @@ class model ():
                         
                     # If training, forward with loss, and no top 5 accuracy calculation
                     self.batch_forward(inputs, labels, 
-                                       centers=self.relations['centers'],
+                                       centroids=self.memory['centroids'],
                                        phase='train')
                     self.batch_loss(labels)
                     self.batch_backward()
@@ -241,7 +241,7 @@ class model ():
             if self.eval_acc_mic_top1 > best_acc:
                 best_epoch = epoch
                 best_acc = self.eval_acc_mic_top1
-                best_centers = self.centers
+                best_centroids = self.centroids
                 best_model_weights['feat_model'] = copy.deepcopy(self.networks['feat_model'].state_dict())
                 best_model_weights['classifier'] = copy.deepcopy(self.networks['classifier'].state_dict())
 
@@ -250,8 +250,8 @@ class model ():
 
         print_str = ['Best validation accuracy is %.3f at epoch %d' % (best_acc, best_epoch)]
         print_write(print_str, self.log_file)
-        # Save the best model and best centers if calculated
-        self.save_model(epoch, best_epoch, best_model_weights, best_acc, centers=best_centers)
+        # Save the best model and best centroids if calculated
+        self.save_model(epoch, best_epoch, best_model_weights, best_acc, centroids=best_centroids)
                 
         print('Done')
 
@@ -284,7 +284,7 @@ class model ():
 
                 # In validation or testing
                 self.batch_forward(inputs, labels, 
-                                   centers=self.relations['centers'],
+                                   centroids=self.memory['centroids'],
                                    phase=phase)
                 self.total_logits = torch.cat((self.total_logits, self.logits))
                 self.total_labels = torch.cat((self.total_labels, labels))
@@ -332,17 +332,17 @@ class model ():
         else:
             print(*print_str)
             
-    def centers_cal(self, data):
+    def centroids_cal(self, data):
 
-        centers = torch.zeros(self.training_opt['num_classes'],
+        centroids = torch.zeros(self.training_opt['num_classes'],
                                    self.training_opt['feature_dim']).cuda()
 
-        print('Calculating centers.')
+        print('Calculating centroids.')
 
         for model in self.networks.values():
             model.eval()
 
-        # Calculate initial centers only on training data.
+        # Calculate initial centroids only on training data.
         with torch.set_grad_enabled(False):
             
             for inputs, labels, _ in tqdm(data):
@@ -352,12 +352,12 @@ class model ():
                 # Add all calculated features to center tensor
                 for i in range(len(labels)):
                     label = labels[i]
-                    centers[label] += self.features[i]
+                    centroids[label] += self.features[i]
 
         # Average summed features with class count
-        centers /= torch.tensor(class_count(data)).float().unsqueeze(1).cuda()
+        centroids /= torch.tensor(class_count(data)).float().unsqueeze(1).cuda()
 
-        return centers
+        return centroids
 
     def load_model(self):
             
@@ -370,7 +370,7 @@ class model ():
         checkpoint = torch.load(model_dir)          
         model_state = checkpoint['state_dict_best']
         
-        self.centers = checkpoint['centers'] if 'centers' in checkpoint else None
+        self.centroids = checkpoint['centroids'] if 'centroids' in checkpoint else None
         
         for key, model in self.networks.items():
 
@@ -379,13 +379,13 @@ class model ():
             # model.load_state_dict(model_state[key])
             model.load_state_dict(weights)
         
-    def save_model(self, epoch, best_epoch, best_model_weights, best_acc, centers=None):
+    def save_model(self, epoch, best_epoch, best_model_weights, best_acc, centroids=None):
         
         model_states = {'epoch': epoch,
                 'best_epoch': best_epoch,
                 'state_dict_best': best_model_weights,
                 'best_acc': best_acc,
-                'centers': centers}
+                'centroids': centroids}
 
         model_dir = os.path.join(self.training_opt['log_dir'], 
                                  'final_model_checkpoint.pth')

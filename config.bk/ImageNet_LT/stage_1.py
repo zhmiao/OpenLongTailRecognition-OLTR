@@ -38,7 +38,7 @@ criterions['PerformanceLoss'] = {'def_file': './loss/SoftmaxLoss.py', 'loss_para
                                  'optim_params': None, 'weight': 1.0}
 config['criterions'] = criterions
 
-relations = {}
-relations['centers'] = False
-relations['init_centers'] = False
-config['relations'] = relations
+memory = {}
+memory['centroids'] = False
+memory['init_centroids'] = False
+config['memory'] = memory

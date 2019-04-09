@@ -42,7 +42,7 @@ criterions['FeatureLoss'] = {'def_file': './loss/DiscCentroidsLoss.py', 'loss_pa
                              'optim_params': feat_loss_optim_param, 'weight': 0.01}
 config['criterions'] = criterions
 
-relations = {}
-relations['centers'] = True
-relations['init_centers'] = True
-config['relations'] = relations
+memory = {}
+memory['centroids'] = True
+memory['init_centroids'] = True
+config['memory'] = memory

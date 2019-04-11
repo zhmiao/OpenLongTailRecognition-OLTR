@@ -1,10 +1,10 @@
 # Large-Scale Long-Tailed Recognition in an Open World
 
-[[Project]](https://liuziwei7.github.io/projects/LongTail.html) [[Paper]]()   
+[[Project]](https://liuziwei7.github.io/projects/LongTail.html) [[Paper]](https://arxiv.org/abs/1904.05160)   
 
 ## Overview
 `Open Long-Tailed Recognition (OLTR)` is the author's re-implementation of the long-tail recognizer described in:  
-"Large-Scale Long-Tailed Recognition in an Open World"   
+"[Large-Scale Long-Tailed Recognition in an Open World](https://arxiv.org/abs/1904.05160)"   
 [Ziwei Liu](https://liuziwei7.github.io/)<sup>\*</sup>,&nbsp; [Zhongqi Miao](https://github.com/zhmiao)<sup>\*</sup>,&nbsp; [Xiaohang Zhan](https://xiaohangzhan.github.io/),&nbsp; [Jiayun Wang](http://pwang.pw/),&nbsp; [Boqing Gong](http://boqinggong.info/),&nbsp; [Stella X. Yu](https://www1.icsi.berkeley.edu/~stellayu/)&nbsp; (CUHK & UC Berkeley / ICSI)&nbsp; 
 in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2019, **Oral Presentation**
 
@@ -92,7 +92,7 @@ The use of this software is RESTRICTED to **non-commercial research and educatio
 ```
 @inproceedings{openlongtailrecognition,
   title={Large-Scale Long-Tailed Recognition in an Open World},
-  author={Ziwei Liu, Zhongqi Miao, Xiaohang Zhan, Jiayun Wang, Boqing Gong, Stella X. Yu},
+  author={Liu, Ziwei and Miao, Zhongqi and Zhan, Xiaohang and Wang, Jiayun and Gong, Boqing and Yu, Stella X.},
   booktitle={IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
   year={2019}
 }

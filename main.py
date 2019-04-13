@@ -27,7 +27,8 @@ output_logits = args.output_logits
 
 config = source_import(args.config).config
 training_opt = config['training_opt']
-relatin_opt = config['relations']
+# change
+relatin_opt = config['memory']
 dataset = training_opt['dataset']
 
 if not os.path.isdir(training_opt['log_dir']):
@@ -49,7 +50,7 @@ if not test_mode:
                                     batch_size=training_opt['batch_size'],
                                     sampler_dic=sampler_dic,
                                     num_workers=training_opt['num_workers'])
-            for x in (['train', 'val', 'train_plain'] if relatin_opt['init_centers'] else ['train', 'val'])}
+            for x in (['train', 'val', 'train_plain'] if relatin_opt['init_centroids'] else ['train', 'val'])}
 
     training_model = model(config, data, test=False)
 

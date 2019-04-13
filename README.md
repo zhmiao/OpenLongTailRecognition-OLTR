@@ -20,6 +20,8 @@ Further information please contact [Zhongqi Miao](mailto:zhongqi.miao@berkeley.e
 
 <img src='./assets/dataset.png' width=800>
 
+NOTE: Places-LT dataset have been updated since the first version. Please download again if you have the first version. 
+
 - First, please download the [ImageNet_2014](http://image-net.org/index) and [Places_365](http://places2.csail.mit.edu/download.html) (256x256 version).
 Please also change the `data_root` in `main.py` accordingly.
 

@@ -13,7 +13,7 @@ def create_model(use_selfatt=False, use_fc=False, dropout=None, stage1_weights=F
         if caffe:
             print('Loading Caffe Pretrained ResNet 152 Weights.')
             resnet152 = init_weights(model=resnet152,
-                                     weights_path='./logs/resnet152.pth',
+                                     weights_path='./logs/caffe_resnet152.pth',
                                      caffe=True)
         elif stage1_weights:
             assert(dataset)

@@ -35,7 +35,7 @@ class LT_Dataset(Dataset):
         self.transform = transform
         with open(txt) as f:
             for line in f:
-                self.img_path.append(os.path.join(root, line.split()[0]))
+                self.img_path.append(root + line.split()[0])
                 self.labels.append(int(line.split()[1]))
         
     def __len__(self):

@@ -101,9 +101,9 @@ def mic_acc_cal(preds, labels):
 
 def class_count (data):
     labels = np.array(data.dataset.labels)
-    class_data_num = []
+    class_data_num = [0] * len(np.unique(labels))
     for l in np.unique(labels):
-        class_data_num.append(len(labels[labels == l]))  
+        class_data_num[l] = len(labels[labels == l]) 
     return class_data_num
 
 # def dataset_dist (in_loader):

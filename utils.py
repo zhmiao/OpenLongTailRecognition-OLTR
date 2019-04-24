@@ -55,13 +55,13 @@ def shot_acc (preds, labels, train_data, many_shot_thr=100, low_shot_thr=20):
 
     preds = preds.detach().cpu().numpy()
     labels = labels.detach().cpu().numpy()
-    train_class_count = [0] * len(np.unique(labels))
-    test_class_count = [0] * len(np.unique(labels))
-    class_correct = [0] * len(np.unique(labels))
+    train_class_count = []
+    test_class_count = []
+    class_correct = []
     for l in np.unique(labels):
-        train_class_count[l] = len(training_labels[training_labels == l])
-        test_class_count[l] = len(labels[labels == l])
-        class_correct[l] = (preds[labels == l] == labels[labels == l]).sum()
+        train_class_count.append(len(training_labels[training_labels == l]))
+        test_class_count.append(len(labels[labels == l]))
+        class_correct.append((preds[labels == l] == labels[labels == l]).sum())
 
     many_shot = []
     median_shot = []
@@ -101,9 +101,9 @@ def mic_acc_cal(preds, labels):
 
 def class_count (data):
     labels = np.array(data.dataset.labels)
-    class_data_num = [0] * len(np.unique(labels))
+    class_data_num = []
     for l in np.unique(labels):
-        class_data_num[l] = len(labels[labels == l]) 
+        class_data_num.append(len(labels[labels == l]))
     return class_data_num
 
 # def dataset_dist (in_loader):

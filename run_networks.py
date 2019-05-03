@@ -180,11 +180,11 @@ class model ():
 
         end_epoch = self.training_opt['num_epochs']
 
-        for model in self.networks.values():
-            model.train()
-
         # Loop over epochs
         for epoch in range(1, end_epoch + 1):
+
+            for model in self.networks.values():
+                model.train()
                 
             torch.cuda.empty_cache()
             

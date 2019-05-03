@@ -12,6 +12,9 @@ in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2019, **Ora
 
 Further information please contact [Zhongqi Miao](mailto:zhongqi.miao@berkeley.edu) and [Ziwei Liu](https://liuziwei7.github.io/).
 
+## Update notifications
+* 05/02/19: The Imagenet-LT stage 1 configuration file was updated so that the results in the paper can be reproduced.
+
 ## Requirements
 * [PyTorch](https://pytorch.org/) (version >= 0.4.1)
 * [scikit-learn](https://scikit-learn.org/stable/)

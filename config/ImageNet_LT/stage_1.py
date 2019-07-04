@@ -17,7 +17,7 @@ config['training_opt'] = training_opt
 
 networks = {}
 feature_param = {'use_modulatedatt':False, 'use_fc': True, 'dropout': None,
-			  'stage1_weights': False, 'dataset': training_opt['dataset'], 'caffe': False}
+			  'stage1_weights': False, 'dataset': training_opt['dataset']}
 feature_optim_param = {'lr': 0.1, 'momentum':0.9, 'weight_decay':0.0005}
 networks['feat_model'] = {'def_file': './models/ResNet10Feature.py',
                           'params': feature_param,

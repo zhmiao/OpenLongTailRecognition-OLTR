@@ -92,6 +92,20 @@ python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test
 python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test_open
 ```
 
+## Benchmarks and Model Zoo
+
+### ImageNet-LT Open-Set Setting
+
+|   Backbone  |    Many-Shot   |  Medium-Shot  |   Few-Shot  |  F-Measure  |      Download      |
+| :---------: | :------------: | :-----------: | :---------: | :---------: | :----------------: |
+|  ResNet-10  |                |               |             |             |     [model]()      |
+
+### Places-LT Open-Set Setting
+
+|   Backbone  |    Many-Shot   |  Medium-Shot  |   Few-Shot  |  F-Measure  |      Download      |
+| :---------: | :------------: | :-----------: | :---------: | :---------: | :----------------: |
+| ResNet-152  |                |               |             |             |     [model]()      |
+
 ## CAUTION
 The current code was prepared using single GPU. The use of multi-GPU can cause problems. 
 

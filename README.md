@@ -13,6 +13,7 @@ in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2019, **Ora
 Further information please contact [Zhongqi Miao](mailto:zhongqi.miao@berkeley.edu) and [Ziwei Liu](https://liuziwei7.github.io/).
 
 ## Update notifications
+* 08/05/2019: Fixed a bug in `utils.py`. Update re-implemented ImageNet-LT weights at the end of this page.
 * 05/02/2019: Fixed a bug in `run_network.py` so the models train properly. Update configuration file for Imagenet-LT stage 1 training so that the results from the paper can be reproduced.  
 
 ## Requirements
@@ -98,7 +99,7 @@ python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test_open
 
 |   Backbone  |    Many-Shot   |  Medium-Shot  |   Few-Shot  |  F-Measure  |      Download      |
 | :---------: | :------------: | :-----------: | :---------: | :---------: | :----------------: |
-|  ResNet-10  |                |               |             |             |     [model]()      |
+|  ResNet-10  |      41.2      |      33.6     |    17.5     |     47.4    |     [model](https://drive.google.com/file/d/1w4oZ9Jmaca-NnO_tSvPaPue3u9jh2em-/view?usp=sharing)      |
 
 ### Places-LT Open-Set Setting
 

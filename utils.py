@@ -67,9 +67,9 @@ def shot_acc (preds, labels, train_data, many_shot_thr=100, low_shot_thr=20):
     median_shot = []
     low_shot = []
     for i in range(len(train_class_count)):
-        if train_class_count[i] > many_shot_thr:
+        if train_class_count[i] >= many_shot_thr:
             many_shot.append((class_correct[i] / test_class_count[i]))
-        elif train_class_count[i] < low_shot_thr:
+        elif train_class_count[i] <= low_shot_thr:
             low_shot.append((class_correct[i] / test_class_count[i]))
         else:
             median_shot.append((class_correct[i] / test_class_count[i]))          

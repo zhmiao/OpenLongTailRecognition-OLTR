@@ -105,7 +105,7 @@ python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test_open
 
 |   Backbone  |    Many-Shot   |  Medium-Shot  |   Few-Shot  |  F-Measure  |      Download      |
 | :---------: | :------------: | :-----------: | :---------: | :---------: | :----------------: |
-| ResNet-152  |                |               |             |             |     [model]()      |
+| ResNet-152  |      38.5      |     37.0      |    21.8     |     48.5    |     [model](https://drive.google.com/file/d/1dNvceMdxEgHWopU2lJEhH_qdBTGIWySY/view?usp=sharing)      |
 
 ## CAUTION
 The current code was prepared using single GPU. The use of multi-GPU can cause problems. 

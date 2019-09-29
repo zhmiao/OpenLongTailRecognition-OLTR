@@ -10,7 +10,7 @@ from utils import source_import
 # LOAD CONFIGURATIONS
 
 data_root = {'ImageNet': '/home/public/public_dataset/ILSVRC2014/Img',
-             'Places': '/home/zhmiao/datasets/Places365'}
+             'Places': '/home/public/dataset/Places365'}
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='./config/Imagenet_LT/Stage_1.py', type=str)

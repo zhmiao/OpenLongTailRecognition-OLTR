@@ -111,7 +111,7 @@ python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test_open
 The current code was prepared using single GPU. The use of multi-GPU can cause problems. 
 
 ## License and Citation
-The use of this software is RESTRICTED to **non-commercial research and educational purposes**.
+The use of this software is released under [BSD-3](https://github.com/zhmiao/OpenLongTailRecognition-OLTR/blob/master/LICENSE).
 ```
 @inproceedings{openlongtailrecognition,
   title={Large-Scale Long-Tailed Recognition in an Open World},

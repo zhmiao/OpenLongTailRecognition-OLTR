@@ -99,7 +99,7 @@ python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test_open
 
 |   Backbone  |    Many-Shot   |  Medium-Shot  |   Few-Shot  |  F-Measure  |      Download      |
 | :---------: | :------------: | :-----------: | :---------: | :---------: | :----------------: |
-|  ResNet-10  |      41.2      |      33.6     |    17.5     |     47.4    |     [model](https://drive.google.com/file/d/1w4oZ9Jmaca-NnO_tSvPaPue3u9jh2em-/view?usp=sharing)      |
+|  ResNet-10  |      44.2      |      35.2     |    17.5     |     50.1    |     [model](https://drive.google.com/file/d/1w4oZ9Jmaca-NnO_tSvPaPue3u9jh2em-/view?usp=sharing)      |
 
 ### Places-LT Open-Set Setting
 

@@ -44,11 +44,11 @@ class ModulatedAttLayer(nn.Module):
         # embedded_gaussian cal self-attention, which may not strong enough
         batch_size = x.size(0)
 
-        g_x = self.g(x).view(batch_size, self.inter_channels, -1)
+        g_x = self.g(x.clone()).view(batch_size, self.inter_channels, -1)
         g_x = g_x.permute(0, 2, 1)
-        theta_x = self.theta(x).view(batch_size, self.inter_channels, -1)
+        theta_x = self.theta(x.clone()).view(batch_size, self.inter_channels, -1)
         theta_x = theta_x.permute(0, 2, 1)
-        phi_x = self.phi(x).view(batch_size, self.inter_channels, -1)
+        phi_x = self.phi(x.clone()).view(batch_size, self.inter_channels, -1)
 
         map_t_p = torch.matmul(theta_x, phi_x)
         mask_t_p = F.softmax(map_t_p, dim=-1)
@@ -60,35 +60,14 @@ class ModulatedAttLayer(nn.Module):
         
         x_flatten = x.view(-1, 7 * 7 * self.in_channels)
         
-        # channel_att = self.fc_channel(x_flatten)
-        # channel_att = channel_att.softmax(dim=1)
-
         spatial_att = self.fc_spatial(x_flatten)
         spatial_att = spatial_att.softmax(dim=1)
 
-        # selector = self.fc_selector(x_flatten)
-        # selector = selector.sigmoid()
-        
-        # class_count = torch.LongTensor(class_count)
-        # class_type = torch.ones_like(class_count)
-        # class_type[class_count > 100] = 0
-        # class_type[class_count < 20] = 2
-        # labels_type = class_type[labels]
-        
-        # loss_attention = self.triplet_loss(channel_selector, labels_type)
-        # loss_attention = 0.0
-
-        # channel_att = channel_att.unsqueeze(2).unsqueeze(3).expand(-1, -1, 7, 7)
-        
         spatial_att = spatial_att.view(-1, 7, 7).unsqueeze(1)
         spatial_att = spatial_att.expand(-1, self.in_channels, -1, -1)
 
-        # selector = selector.unsqueeze(2).unsqueeze(3).expand(-1, self.in_channels, 7, 7)
-
-        # final = spatial_att * channel_att * mask + x
         final = spatial_att * mask + x
 
-        # return final, loss_attention
         return final, [x, spatial_att, mask]
 
     def forward(self, x):

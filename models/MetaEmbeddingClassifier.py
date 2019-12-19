@@ -17,15 +17,15 @@ class MetaEmbedding_Classifier(nn.Module):
     def forward(self, x, centroids, *args):
         
         # storing direct feature
-        direct_feature = x
+        direct_feature = x.clone()
 
         batch_size = x.size(0)
         feat_size = x.size(1)
         
         # set up visual memory
-        x_expand = x.unsqueeze(1).expand(-1, self.num_classes, -1)
-        centroids_expand = centroids.unsqueeze(0).expand(batch_size, -1, -1)
-        keys_memory = centroids
+        x_expand = x.clone().unsqueeze(1).expand(-1, self.num_classes, -1)
+        centroids_expand = centroids.clone().unsqueeze(0).expand(batch_size, -1, -1)
+        keys_memory = centroids.clone()
         
         # computing reachability
         dist_cur = torch.norm(x_expand - centroids_expand, 2, 2)
@@ -34,12 +34,12 @@ class MetaEmbedding_Classifier(nn.Module):
         reachability = (scale / values_nn[:, 0]).unsqueeze(1).expand(-1, feat_size)
 
         # computing memory feature by querying and associating visual memory
-        values_memory = self.fc_hallucinator(x)
+        values_memory = self.fc_hallucinator(x.clone())
         values_memory = values_memory.softmax(dim=1)
         memory_feature = torch.matmul(values_memory, keys_memory)
 
         # computing concept selector
-        concept_selector = self.fc_selector(x)
+        concept_selector = self.fc_selector(x.clone())
         concept_selector = concept_selector.tanh() 
         x = reachability * (direct_feature + concept_selector * memory_feature)
 

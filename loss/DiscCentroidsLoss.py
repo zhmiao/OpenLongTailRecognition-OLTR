@@ -14,23 +14,29 @@ class DiscCentroidsLoss(nn.Module):
         self.size_average = size_average
 
     def forward(self, feat, label):
+
         batch_size = feat.size(0)
-        
-        # calculate attracting loss
+
+        #############################
+        # calculate attracting loss #
+        #############################
 
         feat = feat.view(batch_size, -1)
+
         # To check the dim of centroids and features
         if feat.size(1) != self.feat_dim:
             raise ValueError("Center's dim: {0} should be equal to input feature's \
                             dim: {1}".format(self.feat_dim,feat.size(1)))
         batch_size_tensor = feat.new_empty(1).fill_(batch_size if self.size_average else 1)
-        loss_attract = self.disccentroidslossfunc(feat, label, self.centroids, batch_size_tensor).squeeze()
-        
-        # calculate repelling loss
+        loss_attract = self.disccentroidslossfunc(feat.clone(), label, self.centroids.clone(), batch_size_tensor).squeeze()
 
-        distmat = torch.pow(feat, 2).sum(dim=1, keepdim=True).expand(batch_size, self.num_classes) + \
-                  torch.pow(self.centroids, 2).sum(dim=1, keepdim=True).expand(self.num_classes, batch_size).t()
-        distmat.addmm_(1, -2, feat, self.centroids.t())
+        ############################
+        # calculate repelling loss #
+        #############################
+
+        distmat = torch.pow(feat.clone(), 2).sum(dim=1, keepdim=True).expand(batch_size, self.num_classes) + \
+                  torch.pow(self.centroids.clone(), 2).sum(dim=1, keepdim=True).expand(self.num_classes, batch_size).t()
+        distmat.addmm_(1, -2, feat.clone(), self.centroids.clone().t())
 
         classes = torch.arange(self.num_classes).long().cuda()
         labels_expand = label.unsqueeze(1).expand(batch_size, self.num_classes)

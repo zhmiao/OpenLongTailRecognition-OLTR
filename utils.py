@@ -85,7 +85,7 @@ def F_measure(preds, labels, openset=False, theta=None):
         
         for i in range(len(labels)):
             true_pos += 1 if preds[i] == labels[i] and labels[i] != -1 else 0
-            false_pos += 1 if preds[i] != labels[i] and labels[i] != -1 and preds[i] != -1 else 0
+            false_pos += 1 if preds[i] != labels[i] and labels[i] != -1 else 0
             false_neg += 1 if preds[i] != labels[i] and labels[i] == -1 else 0
 
         precision = true_pos / (true_pos + false_pos)

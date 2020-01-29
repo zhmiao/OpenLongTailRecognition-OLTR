@@ -13,6 +13,7 @@ in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2019, **Ora
 Further information please contact [Zhongqi Miao](mailto:zhongqi.miao@berkeley.edu) and [Ziwei Liu](https://liuziwei7.github.io/).
 
 ## Update notifications
+* 01/29/2020: We updated the `False Positive` calculation in `util.py` so that the numbers are normal again. The reported F-measure numbers in the paper might be a little bit higher than actual numbers for all baselines. We will update it as soon as possible. We have updated the new F-measure number in the following table. Thanks.
 * 12/19/2019: Updated modules with 'clone()' methods and set `use_fc` in ImageNet-LT stage-1 config to `False`. Currently, the results for ImageNet-LT is comparable to reported numbers in the paper (a little bit better), and the reproduced results are updated below. We also found the bug in Places-LT. We will update the code and reproduced results as soon as possible. 
 * 08/05/2019: Fixed a bug in `utils.py`. Update re-implemented ImageNet-LT weights at the end of this page.
 * 05/02/2019: Fixed a bug in `run_network.py` so the models train properly. Update configuration file for Imagenet-LT stage 1 training so that the results from the paper can be reproduced.  

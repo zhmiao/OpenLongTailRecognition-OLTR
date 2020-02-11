@@ -33,7 +33,7 @@ def init_weights(model, weights_path, caffe=False, classifier=False):
     """Initialize weights"""
     print('Pretrained %s weights path: %s' % ('classifier' if classifier else 'feature model',
                                               weights_path))    
-    weights = torch.load(weights_path)   
+    weights = torch.load(weights_path)
     if not classifier:
         if caffe:
             weights = {k: weights[k] if k in weights else model.state_dict()[k] 

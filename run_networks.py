@@ -14,7 +14,7 @@ import pdb
 class model ():
     
     def __init__(self, config, data, test=False):
-        
+
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.config = config
         self.training_opt = self.config['training_opt']
@@ -52,7 +52,7 @@ class model ():
             os.remove(self.log_file)
         
     def init_models(self, optimizer=True):
-        
+
         networks_defs = self.config['networks']
         self.networks = {}
         self.model_optim_params_list = []
@@ -79,9 +79,9 @@ class model ():
             # Optimizer list
             optim_params = val['optim_params']
             self.model_optim_params_list.append({'params': self.networks[key].parameters(),
-                                                'lr': optim_params['lr'],
-                                                'momentum': optim_params['momentum'],
-                                                'weight_decay': optim_params['weight_decay']})
+                                                 'lr': optim_params['lr'],
+                                                 'momentum': optim_params['momentum'],
+                                                 'weight_decay': optim_params['weight_decay']})
 
     def init_criterions(self):
 
@@ -188,12 +188,6 @@ class model ():
                 
             torch.cuda.empty_cache()
             
-            # Set model modes and set scheduler
-            # In training, step optimizer scheduler and set model to train() 
-            self.model_optimizer_scheduler.step()
-            if self.criterion_optimizer:
-                self.criterion_optimizer_scheduler.step()
-
             # Iterate over dataset
             for step, (inputs, labels, _) in enumerate(self.data['train']):
 
@@ -233,6 +227,12 @@ class model ():
                                      'Minibatch_accuracy_micro: %.3f'
                                       % (minibatch_acc)]
                         print_write(print_str, self.log_file)
+
+            # Set model modes and set scheduler
+            # In training, step optimizer scheduler and set model to train()
+            self.model_optimizer_scheduler.step()
+            if self.criterion_optimizer:
+                self.criterion_optimizer_scheduler.step()
 
             # After every epoch, validation
             self.eval(phase='val')

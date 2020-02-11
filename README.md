@@ -13,6 +13,7 @@ in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2019, **Ora
 Further information please contact [Zhongqi Miao](mailto:zhongqi.miao@berkeley.edu) and [Ziwei Liu](https://liuziwei7.github.io/).
 
 ## Update notifications
+* 02/11/2020: We updated configuration files for `Places_LT` dataset. The current results are a little bit higher than reported, even with updated F-measure calculation. One important thing to be considered is that we unfreeze the model weights for the first stage training of `Places-LT`, which means it is not suitable for single-GPU training in most cases (we used 4 1080ti on in our implementation). However, for the second stage, since the memory and center loss do not currently support multi-GPUs, please switch back to single-GPU training. Thank you very much!
 * 01/29/2020: We updated the `False Positive` calculation in `util.py` so that the numbers are normal again. The reported F-measure numbers in the paper might be a little bit higher than actual numbers for all baselines. We will update it as soon as possible. We have updated the new F-measure number in the following table. Thanks.
 * 12/19/2019: Updated modules with 'clone()' methods and set `use_fc` in ImageNet-LT stage-1 config to `False`. Currently, the results for ImageNet-LT is comparable to reported numbers in the paper (a little bit better), and the reproduced results are updated below. We also found the bug in Places-LT. We will update the code and reproduced results as soon as possible. 
 * 08/05/2019: Fixed a bug in `utils.py`. Update re-implemented ImageNet-LT weights at the end of this page.
@@ -78,11 +79,11 @@ python main.py --config ./config/ImageNet_LT/stage_1.py --test
 ```
 
 ### Places-LT
-- Stage 1 training:
+- Stage 1 training (At this stage, multi-GPU might be necessary since we are finetuning a ResNet-152.):
 ```
 python main.py --config ./config/Places_LT/stage_1.py
 ```
-- Stage 2 training:
+- Stage 2 training (At this stage, only sing-GPU is supported, please switch back to single-GPU training.):
 ```
 python main.py --config ./config/Places_LT/stage_2_meta_embedding.py
 ```
@@ -108,7 +109,7 @@ Results will be updated asap.
 
 |   Backbone  |    Many-Shot   |  Medium-Shot  |   Few-Shot  |  F-Measure  |      Download      |
 | :---------: | :------------: | :-----------: | :---------: | :---------: | :----------------: |
-| ResNet-152  |      -      |     -     |    -     |     -    |     [model]()      |
+| ResNet-152  |      43.2      |      39.8     |    26.1     |     49.3    |     [model](https://drive.google.com/file/d/1ZmheW8HsQQ-tKf3mYgmJMn_0q5IOnSVZ/view?usp=sharing)      |
 
 ## CAUTION
 The current code was prepared using single GPU. The use of multi-GPU can cause problems. 

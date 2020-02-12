@@ -105,7 +105,6 @@ python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test_open
 |  ResNet-10  |      44.2      |      35.2     |    17.5     |     44.6    |     [model](https://drive.google.com/open?id=1CKcZuTQJkRvA3pUK_AL_H2wsvt5gY5of)      |
 
 ### Places-LT Open-Set Setting
-Results will be updated asap.
 
 |   Backbone  |    Many-Shot   |  Medium-Shot  |   Few-Shot  |  F-Measure  |      Download      |
 | :---------: | :------------: | :-----------: | :---------: | :---------: | :----------------: |

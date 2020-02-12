@@ -111,7 +111,7 @@ python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test_open
 | ResNet-152  |      43.2      |      39.8     |    26.1     |     49.3    |     [model](https://drive.google.com/file/d/1ZmheW8HsQQ-tKf3mYgmJMn_0q5IOnSVZ/view?usp=sharing)      |
 
 ## CAUTION
-The current code was prepared using single GPU. The use of multi-GPU can cause problems. 
+The current code was prepared using single GPU. The use of multi-GPU can cause problems except for the first stage of `Places-LT`. 
 
 ## License and Citation
 The use of this software is released under [BSD-3](https://github.com/zhmiao/OpenLongTailRecognition-OLTR/blob/master/LICENSE).

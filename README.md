@@ -83,7 +83,7 @@ python main.py --config ./config/ImageNet_LT/stage_1.py --test
 ```
 python main.py --config ./config/Places_LT/stage_1.py
 ```
-- Stage 2 training (At this stage, only sing-GPU is supported, please switch back to single-GPU training.):
+- Stage 2 training (At this stage, only single-GPU is supported, please switch back to single-GPU training.):
 ```
 python main.py --config ./config/Places_LT/stage_2_meta_embedding.py
 ```

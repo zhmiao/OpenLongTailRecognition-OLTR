@@ -1,10 +1,10 @@
 from models.ResNetFeature import *
 from utils import *
         
-def create_model(use_selfatt=False, use_fc=False, dropout=None, stage1_weights=False, dataset=None, test=False, *args):
+def create_model(use_modulatedaddatt=False, use_fc=False, dropout=None, stage1_weights=False, dataset=None, test=False, *args):
     
     print('Loading Scratch ResNet 10 Feature Model.')
-    resnet10 = ResNet(BasicBlock, [1, 1, 1, 1], use_modulatedatt=use_selfatt, use_fc=use_fc, dropout=None)
+    resnet10 = ResNet(BasicBlock, [1, 1, 1, 1], use_modulatedatt=use_modulatedatt, use_fc=use_fc, dropout=None)
 
     if not test:
         if stage1_weights:

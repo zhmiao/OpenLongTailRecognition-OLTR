@@ -70,10 +70,10 @@ class model ():
             self.networks[key] = nn.DataParallel(self.networks[key]).to(self.device)
             
             if 'fix' in val and val['fix']:
-                print('Freezing feature weights except for self attention weights (if exist).')
+                print('Freezing feature weights except for modulated attention weights (if exist).')
                 for param_name, param in self.networks[key].named_parameters():
                     # Freeze all parameters except self attention parameters
-                    if 'selfatt' not in param_name and 'fc' not in param_name:
+                    if 'modulatedatt' not in param_name and 'fc' not in param_name:
                         param.requires_grad = False
 
             # Optimizer list

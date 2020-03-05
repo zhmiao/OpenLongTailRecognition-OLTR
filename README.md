@@ -13,6 +13,7 @@ in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) 2019, **Ora
 Further information please contact [Zhongqi Miao](mailto:zhongqi.miao@berkeley.edu) and [Ziwei Liu](https://liuziwei7.github.io/).
 
 ## Update notifications
+* __03/04/2020:__ We changed all valirables named `selfatt` to `modulatedatt` so that the attention module can be properly trained in the second stage for Places-LT. ImageNet-LT does not have this problem since the weights are more fixed. We have updated new results using fixed code, which is still better than reported. The weights are also updated. Thanks
 * __02/11/2020:__ We updated configuration files for `Places_LT` dataset. The current results are a little bit higher than reported, even with updated F-measure calculation. One important thing to be considered is that we have unfrozon the model weights for the first stage training of `Places-LT`, which means it is not suitable for single-GPU training in most cases (we used 4 1080ti in our implementation). However, for the second stage, since the memory and center loss do not support multi-GPUs currently, please switch back to single-GPU training. Thank you very much!
 * __01/29/2020:__ We updated the `False Positive` calculation in `util.py` so that the numbers are normal again. The reported F-measure numbers in the paper might be a little bit higher than actual numbers for all baselines. We will update it as soon as possible. We have updated the new F-measure number in the following table. Thanks.
 * __12/19/2019:__ Updated modules with 'clone()' methods and set `use_fc` in ImageNet-LT stage-1 config to `False`. Currently, the results for ImageNet-LT is comparable to reported numbers in the paper (a little bit better), and the reproduced results are updated below. We also found the bug in Places-LT. We will update the code and reproduced results as soon as possible. 
@@ -108,7 +109,7 @@ python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test_open
 
 |   Backbone  |    Many-Shot   |  Medium-Shot  |   Few-Shot  |  F-Measure  |      Download      |
 | :---------: | :------------: | :-----------: | :---------: | :---------: | :----------------: |
-| ResNet-152  |      43.2      |      39.8     |    26.1     |     49.3    |     [model](https://drive.google.com/file/d/1ZmheW8HsQQ-tKf3mYgmJMn_0q5IOnSVZ/view?usp=sharing)      |
+| ResNet-152  |      43.7      |      40.2     |    28.0     |     50.0    |     [model](https://drive.google.com/open?id=1ZkYzg74O8hKlsq8LcLlECsi2QVeG5mr0)      |
 
 ## CAUTION
 The current code was prepared using single GPU. The use of multi-GPU can cause problems except for the first stage of `Places-LT`. 

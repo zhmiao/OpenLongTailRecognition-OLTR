@@ -97,7 +97,7 @@ python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test
 python main.py --config ./config/Places_LT/stage_2_meta_embedding.py --test_open
 ```
 
-## Reproduced Benchmarks and Model Zoo (Updated on 02/11/2020)
+## Reproduced Benchmarks and Model Zoo (Updated on 03/05/2020)
 
 ### ImageNet-LT Open-Set Setting
 

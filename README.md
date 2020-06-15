@@ -1,6 +1,6 @@
 # Large-Scale Long-Tailed Recognition in an Open World
 
-[[Project]](https://liuziwei7.github.io/projects/LongTail.html) [[Paper]](https://arxiv.org/abs/1904.05160)   
+[[Project]](https://liuziwei7.github.io/projects/LongTail.html) [[Paper]](https://arxiv.org/abs/1904.05160) [[Blog]](https://bair.berkeley.edu/blog/2019/05/13/oltr/)
 
 ## Overview
 `Open Long-Tailed Recognition (OLTR)` is the author's re-implementation of the long-tail recognizer described in:  
